@@ -25,6 +25,14 @@ body{
     padding:20px;
 }
 
+/* FULL WIDTH FIX */
+.container{
+    width:100%;
+    max-width:1100px;
+    margin:auto;
+}
+
+/* NAV */
 .navbar{
     background:#E51C22;
     border-radius:25px;
@@ -33,7 +41,6 @@ body{
     display:flex;
     align-items:center;
     gap:20px;
-    box-shadow:0 10px 30px rgba(0,0,0,.15);
 }
 
 .logo{height:80px;}
@@ -44,12 +51,7 @@ body{
     font-weight:800;
 }
 
-.container{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
-}
-
+/* CARD */
 .card{
     background:white;
     border-radius:20px;
@@ -57,6 +59,18 @@ body{
     box-shadow:0 10px 25px rgba(0,0,0,.12);
     border-left:8px solid #E51C22;
 }
+
+/* ROW SYSTEM */
+.row{
+    display:flex;
+    gap:10px;
+    width:100%;
+    flex-wrap:wrap;
+}
+
+.col-30{flex:3; min-width:120px;}
+.col-60{flex:6; min-width:200px;}
+.col-10{flex:1;}
 
 label{
     display:block;
@@ -72,24 +86,7 @@ select,input{
     border:1px solid #ddd;
 }
 
-
-.row{
-    display:flex;
-    gap:10px;
-    width:100%;
-}
-
-.col-30{flex:3;}
-.col-60{flex:6;}
-.col-10{flex:1;}
-
-.row select,
-.row input{
-    width:100%;
-}
-
 /* BUTTON */
-
 button{
     margin-top:20px;
     padding:12px;
@@ -105,7 +102,6 @@ button{
 
 button:disabled{
     background:#999;
-    cursor:not-allowed;
 }
 
 </style>
@@ -130,12 +126,16 @@ button:disabled{
 
     <div class="col-30">
         <label>Región</label>
-        <select id="region"></select>
+        <select id="region">
+            <option value="">Seleccione su respuesta</option>
+        </select>
     </div>
 
     <div class="col-60">
         <label>Tienda</label>
-        <select id="tienda"></select>
+        <select id="tienda">
+            <option value="">Seleccione su respuesta</option>
+        </select>
     </div>
 
     <div class="col-10"></div>
@@ -143,9 +143,10 @@ button:disabled{
 </div>
 
 <label>Vendedor</label>
-<select id="vendedor"></select>
+<select id="vendedor">
+    <option value="">Seleccione su respuesta</option>
+</select>
 
-<!-- DOC -->
 <div class="row">
 
     <div class="col-30">
@@ -170,7 +171,6 @@ button:disabled{
 
 <input id="tipo_doc_otro" placeholder="Especifique" style="display:none">
 
-<!-- BASE -->
 <label>Base Cliente</label>
 <select id="base">
     <option value="">Seleccione su respuesta</option>
@@ -183,7 +183,6 @@ button:disabled{
     <option>Base CREDICASH</option>
 </select>
 
-<!-- GESTION -->
 <label>Tipo Gestión</label>
 <select id="gestion">
     <option value="">Seleccione su respuesta</option>
@@ -194,7 +193,6 @@ button:disabled{
 
 <input id="gestion_otro" placeholder="Especifique" style="display:none">
 
-<!-- RESULTADO -->
 <label>Resultado</label>
 <select id="resultado">
     <option value="">Seleccione su respuesta</option>
@@ -246,7 +244,6 @@ Papa.parse(MAESTRO,{
     region.innerHTML =
     `<option value="">Seleccione su respuesta</option>` +
     regiones.map(r=>`<option>${r}</option>`).join("");
-
   }
 });
 
@@ -254,15 +251,14 @@ function cargarTiendas(){
 
   let reg = clean(region.value);
 
+  tienda.innerHTML = `<option value="">Seleccione su respuesta</option>`;
+  vendedor.innerHTML = `<option value="">Seleccione su respuesta</option>`;
+
   let tiendas = [...new Set(
-    datos.filter(x=>clean(x.REG)===reg)
-         .map(x=>clean(x.TIENDA))
+    datos.filter(x=>clean(x.REG)===reg).map(x=>clean(x.TIENDA))
   )];
 
-  tienda.innerHTML =
-  `<option value="">Seleccione su respuesta</option>` +
-  tiendas.map(t=>`<option>${t}</option>`).join("");
-
+  tienda.innerHTML += tiendas.map(t=>`<option>${t}</option>`).join("");
 }
 
 function cargarVendedores(){
@@ -275,13 +271,11 @@ function cargarVendedores(){
     clean(x.TIENDA)===tie
   );
 
-  vendedor.innerHTML =
-  `<option value="">Seleccione su respuesta</option>` +
+  vendedor.innerHTML = `<option value="">Seleccione su respuesta</option>` +
   vend.map(v=>`<option value="${v.ID_VEN}">${v.VENDEDOR}</option>`).join("");
-
 }
 
-region.onchange = ()=>{cargarTiendas(); vendedor.innerHTML='';};
+region.onchange = cargarTiendas;
 tienda.onchange = cargarVendedores;
 
 tipo_doc.onchange = ()=> tipo_doc_otro.style.display = tipo_doc.value==="Otro"?"block":"none";
@@ -298,11 +292,17 @@ return;
 }
 
 let btn = document.getElementById("btn");
-
 btn.disabled = true;
 btn.innerText = "Enviando...";
 
 let v = datos.find(x=>x.ID_VEN==vendedor.value);
+
+if(!v){
+alert("Vendedor no válido");
+btn.disabled = false;
+btn.innerText = "Guardar Gestión";
+return;
+}
 
 let payload = {
 REG:v.REG,
