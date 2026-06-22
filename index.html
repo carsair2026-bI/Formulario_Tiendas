@@ -288,18 +288,31 @@ function clean(v){
 }
 
 Papa.parse(MAESTRO,{
-  download:true,
-  header:true,
-  skipEmptyLines:true,
-  complete:(r)=>{
-    datos = r.data;
+    download:true,
+    header:true,
+    skipEmptyLines:true,
+    complete:(r)=>{
 
-    let regiones = [...new Set(datos.map(x=>clean(x.REG)))];
+        console.log("DATOS:", r.data);
+        console.log("ERRORES:", r.errors);
 
-    region.innerHTML =
-    `<option value="">Seleccione su respuesta</option>` +
-    regiones.map(r=>`<option>${r}</option>`).join("");
-  }
+        datos = r.data;
+
+        let regiones = [...new Set(
+            datos.map(x => clean(x.REG))
+                 .filter(x => x)
+        )];
+
+        console.log("REGIONES:", regiones);
+
+        region.innerHTML =
+        '<option value="">Seleccione su respuesta</option>' +
+        regiones.map(r => `<option>${r}</option>`).join("");
+
+    },
+    error:(err)=>{
+        console.error("ERROR CSV:", err);
+    }
 });
 
 function cargarTiendas(){
