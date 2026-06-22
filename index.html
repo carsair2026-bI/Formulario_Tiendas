@@ -1,254 +1,179 @@
 <!DOCTYPE html>
-
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reportes Power BI</title>
+<title>Formulario Gestión</title>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <style>
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    background:linear-gradient(135deg,#f5f7fa,#e4e8f0);
-    font-family:'Segoe UI',sans-serif;
-    min-height:100vh;
-    padding:25px;
-}
-
-.navbar{
-    background:#E51C22;
-    border-radius:18px;
-    padding:18px 25px;
-    margin-bottom:25px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    box-shadow:0 10px 30px rgba(0,0,0,.15);
-}
-
-.navbar-title{
-    color:white;
-    font-size:28px;
-    font-weight:700;
-}
-
-.logo{
-    height:55px;
-    width:auto;
-    object-fit:contain;
-}
-
-.dashboard-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(50px,1fr));
-    gap:18px;
-    margin-bottom:25px;
-}
-
-.card-btn{
-    position:relative;
-    padding:px;
-    border-radius:20px;
-    background:rgba(255,255,255,.9);
-    backdrop-filter:blur(10px);
-    border-left:6px solid #E51C22;
-    cursor:pointer;
-    text-align:center;
-    transition:.35s;
-    box-shadow:0 10px 25px rgba(0,0,0,.08);
-}
-
-.card-btn:hover{
-    transform:translateY(-8px);
-    background:#E51C22;
-    color:white;
-    box-shadow:0 20px 40px rgba(229,28,34,.25);
-}
-
-.card-btn:hover p{
-    color:white;
-}
-
-.card-btn i{
-    font-size:5px;
-    display:block;
-    margin-bottom:5px;
-}
-
-.card-btn h3{
-    margin-bottom:5px;
-}
-
-.card-btn p{
-    color:#6b7280;
-}
-
-.report-card{
-    background:white;
-    border-radius:10px;
-    overflow:hidden;
-    box-shadow:0 10px 10px rgba(0,0,0,.12);
-}
-
-.report-header{
-    background:linear-gradient(135deg,#ff4d4d,#d90429);
-    color:white;
-    padding:5px;
-    text-align:center;
-    font-size:22px;
-    font-weight:700;
-}
-
-#placeholder{
-    height:850px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    flex-direction:column;
-    background:linear-gradient(135deg,#f8fafc,#eef2f7);
-}
-
-.placeholder-title{
-    font-size:36px;
-    font-weight:800;
-    color:#dc3545;
-}
-
-.placeholder-text{
-    margin-top:10px;
-    color:#6b7280;
-    font-size:18px;
-}
-
-iframe{
-    width:100%;
-    height:850px;
-    border:none;
-    display:none;
-}
-
-.arrow{
-    font-size:42px;
-    display:inline-block;
-    animation:bounce 1.2s infinite;
-}
-
-@keyframes bounce{
-    0%,100%{
-        transform:translateY(0);
-    }
-    50%{
-        transform:translateY(-10px);
-    }
-}
-
+body{font-family:Arial;max-width:900px;margin:auto;padding:20px}
+label{display:block;margin-top:12px;font-weight:bold}
+select,input{width:100%;padding:8px;margin-top:5px}
+button{margin-top:20px;padding:10px}
 </style>
 
 </head>
-
 <body>
 
-<div class="navbar">
+<h2>Formulario Gestión Comercial</h2>
 
-```
-<div class="navbar-title">
-    Reportes Grupo Carsa
-</div>
+<form id="form">
 
-<img
-    src="https://drive.google.com/uc?export=view&id=1VwTev2ZqTlRqhTeImYsYZ4TDGGWgbTGG"
-    class="logo"
-    alt="Logo">
-```
+<label>Región</label>
+<select id="region"></select>
 
-</div>
+<label>Tienda</label>
+<select id="tienda"></select>
 
-<div class="dashboard-grid">
+<label>Vendedor</label>
+<select id="vendedor"></select>
 
-```
-<div class="card-btn"
-     onclick="cargarReporte('Venta QT','https://app.powerbi.com/view?r=eyJrIjoiZDEwZWI3NjgtMTE0Mi00NmNmLWI3NTctMmUzY2Y0NzVmZTQ4IiwidCI6IjAyMDhhY2YzLTJiYjQtNGMzYi04MGQ5LTM2YTY4M2Y3OWZkNiJ9&pageName=2b13e294406015565300')">
+<label>Tipo Documento</label>
+<select id="tipo_doc">
+<option>DNI</option>
+<option>RUC</option>
+<option>Pasaporte</option>
+<option>Otro</option>
+</select>
 
-    <i class="bi bi-graph-up-arrow"></i>
-    <h3>Venta QT</h3>
-    <p>Indicadores comerciales</p>
+<input id="tipo_doc_otro" placeholder="Especifique otro" style="display:none">
 
-</div>
+<label>Número Documento</label>
+<input id="num_doc">
 
-<div class="card-btn"
-     onclick="cargarReporte('Liquidación Antigüedad','https://app.powerbi.com/view?r=eyJrIjoiZGU5NWZkMWItMzQyZC00MWYxLWI4MmEtY2VkODFkNTUxMzU1IiwidCI6IjAyMDhhY2YzLTJiYjQtNGMzYi04MGQ5LTM2YTY4M2Y3OWZkNiJ9&pageName=9d45593874a64936a66d')">
+<label>Base Cliente</label>
+<select id="base">
+<option>Base Credialtoque</option>
+<option>Piloto Televentas</option>
+<option>Base Recompra</option>
+<option>Base Aprobados sin compra</option>
+<option>Base CAMPAÑA ELECTRO</option>
+<option>Base LINEAS APROBADAS</option>
+<option>Base CREDICASH</option>
+</select>
 
-    <i class="bi bi-calendar-check"></i>
-    <h3>Liquidación Antigüedad</h3>
-    <p>Seguimiento de antigüedad</p>
+<label>Tipo Gestión</label>
+<select id="gestion">
+<option>Telefónica y/o Whatsapp</option>
+<option>Visita terrena</option>
+<option>Otro</option>
+</select>
 
-</div>
+<input id="gestion_otro" placeholder="Especifique" style="display:none">
 
-<div class="card-btn"
-     onclick="cargarReporte('Bolsa Tienda','https://app.powerbi.com/view?r=eyJrIjoiNWE0OWJhMWMtNTU5Ny00YmU5LWI2N2QtOGNjYzg2YjMwZDEzIiwidCI6IjAyMDhhY2YzLTJiYjQtNGMzYi04MGQ5LTM2YTY4M2Y3OWZkNiJ9&pageName=eccb299d317937f2f476')">
+<label>Resultado</label>
+<select id="resultado">
+<option>Cliente se acercará a tienda a compra</option>
+<option>Cliente no contesta</option>
+<option>Cliente no se le ubica en vivienda</option>
+<option>Cliente no desea, por tasa</option>
+<option>Cliente no desea, no cuenta con inicial</option>
+<option>Fuera zona</option>
+<option>Cliente compro al contado</option>
+<option>Teléfono fuera de servicio / errado</option>
+<option>No pertenece a la zona</option>
+<option>Otro</option>
+</select>
 
-    <i class="bi bi-bar-chart-fill"></i>
-    <h3>Bolsa Tienda</h3>
-    <p>Indicadores estratégicos</p>
+<input id="resultado_otro" placeholder="Especifique" style="display:none">
 
-</div>
-```
+<button>Guardar</button>
 
-</div>
-
-<div class="report-card">
-
-```
-<div class="report-header" id="titulo">
-    Selecciona un reporte
-</div>
-
-<div id="placeholder">
-
-    <div class="placeholder-title">
-        <span class="arrow">⬆️</span>
-        Selecciona Tu Reporte
-    </div>
-
-    <div class="placeholder-text">
-        Selecciona uno de los reportes para visualizar la información
-    </div>
-
-</div>
-
-<iframe id="visor" allowfullscreen></iframe>
-```
-
-</div>
+</form>
 
 <script>
 
-function cargarReporte(nombre,url){
+const MAESTRO = "https://docs.google.com/spreadsheets/d/1QRKoSmQJTDVK6Wg2xx94zPD3Vkn-ULJ-/export?format=csv";
+const API = "PEGA_AQUI_TU_WEB_APP_URL";
 
-    document.getElementById('titulo').innerText = nombre;
+let datos = [];
 
-    document.getElementById('placeholder').style.display = 'none';
+Papa.parse(MAESTRO,{
+  download:true,
+  header:true,
+  complete:(r)=>{
 
-    const visor = document.getElementById('visor');
+    datos = r.data;
 
-    visor.style.display = 'block';
+    let regiones = [...new Set(datos.map(x=>x.REG))];
 
-    visor.src = url;
+    region.innerHTML = regiones.map(r=>`<option>${r}</option>`).join("");
 
-    document.querySelector('.report-card').scrollIntoView({
-        behavior:'smooth',
-        block:'start'
-    });
+    cargarTiendas();
 
+  }
+});
+
+function cargarTiendas(){
+
+  let reg = region.value;
+
+  let tiendas = [...new Set(datos.filter(x=>x.REG===reg).map(x=>x.TIENDA))];
+
+  tienda.innerHTML = tiendas.map(t=>`<option>${t}</option>`).join("");
+
+  cargarVendedores();
 }
+
+function cargarVendedores(){
+
+  let reg = region.value;
+  let tie = tienda.value;
+
+  let vend = datos.filter(x=>x.REG===reg && x.TIENDA===tie);
+
+  vendedor.innerHTML = vend.map(v=>`
+    <option value="${v.ID_VEN}">
+      ${v.VENDEDOR}
+    </option>`).join("");
+}
+
+region.onchange = cargarTiendas;
+tienda.onchange = cargarVendedores;
+
+tipo_doc.onchange = () => {
+  tipo_doc_otro.style.display =
+  tipo_doc.value==="Otro" ? "block":"none";
+}
+
+gestion.onchange = () => {
+  gestion_otro.style.display =
+  gestion.value==="Otro" ? "block":"none";
+}
+
+resultado.onchange = () => {
+  resultado_otro.style.display =
+  resultado.value==="Otro" ? "block":"none";
+}
+
+form.onsubmit = async (e)=>{
+
+e.preventDefault();
+
+let v = datos.find(x=>x.ID_VEN==vendedor.value);
+
+let payload = {
+  REG:v.REG,
+  TIENDA:v.TIENDA,
+  VENDEDOR:v.VENDEDOR,
+  ID_VEN:v.ID_VEN,
+  TIPO_DOCUMENTO:tipo_doc.value,
+  NUMERO_DOCUMENTO:num_doc.value,
+  BASE_CLIENTE:base.value,
+  TIPO_GESTION:gestion.value,
+  RESULTADO:resultado.value
+};
+
+await fetch(API,{
+  method:"POST",
+  body:JSON.stringify(payload)
+});
+
+alert("Guardado");
+form.reset();
+
+};
 
 </script>
 
