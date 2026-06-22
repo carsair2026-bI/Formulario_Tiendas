@@ -11,463 +11,473 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <style>
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'Segoe UI',sans-serif;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
 }
 
-body{
-    background:linear-gradient(135deg,#f5f7fa,#e4e8f0);
-    min-height:100vh;
-    padding:20px;
+body {
+    background: linear-gradient(135deg, #f5f7fa, #e4e8f0);
+    min-height: 100vh;
+    padding: 20px;
 }
 
-/* FULL WIDTH FIX */
-.container{
-    width:100%;
-    max-width:1100px;
-    margin:auto;
+.container {
+    width: 100%;
+    max-width: 1100px;
+    margin: auto;
 }
 
 /* NAV */
-.navbar{
-    background:#E51C22;
-    border-radius:25px;
-    padding:12px 30px;
-    margin-bottom:25px;
-    display:flex;
-    align-items:center;
-    gap:20px;
+.navbar {
+    background: #E51C22;
+    border-radius: 25px;
+    padding: 12px 30px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
-.logo{height:80px;}
+.logo { height: 80px; }
 
-.navbar-title{
-    color:white;
-    font-size:40px;
-    font-weight:800;
+.navbar-title {
+    color: white;
+    font-size: 40px;
+    font-weight: 800;
 }
 
 /* CARD */
-.card{
-    background:white;
-    border-radius:20px;
-    padding:25px;
-    box-shadow:0 10px 25px rgba(0,0,0,.12);
-    border-left:8px solid #E51C22;
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,.12);
+    border-left: 8px solid #E51C22;
 }
 
 /* ROW SYSTEM */
-.row{
-    display:flex;
-    gap:10px;
-    width:100%;
-    flex-wrap:wrap;
+.row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    flex-wrap: wrap;
 }
 
-.col-30{flex:3; min-width:120px;}
-.col-60{flex:6; min-width:200px;}
-.col-10{flex:1;}
+.col-30 { flex: 3; min-width: 120px; }
+.col-60 { flex: 6; min-width: 200px; }
+.col-10 { flex: 1; }
 
-label{
-    display:block;
-    margin-top:12px;
-    font-weight:600;
+label {
+    display: block;
+    margin-top: 12px;
+    font-weight: 600;
 }
 
-select,input{
-    width:100%;
-    padding:10px;
-    margin-top:5px;
-    border-radius:10px;
-    border:1px solid #ddd;
+select, input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
 }
 
 /* BUTTON */
-button{
-    margin-top:20px;
-    padding:12px;
-    width:100%;
-    border:none;
-    border-radius:12px;
-    background:#E51C22;
-    color:white;
-    font-size:16px;
-    font-weight:700;
-    cursor:pointer;
+button {
+    margin-top: 20px;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    background: #E51C22;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
-button:disabled{
-    background:#999;
-}
-.mensaje-exito{
-    position:fixed;
-    top:30px;
-    right:30px;
-    background:#28a745;
-    color:white;
-    padding:18px 25px;
-    border-radius:15px;
-    font-size:18px;
-    font-weight:700;
-    display:flex;
-    align-items:center;
-    gap:12px;
-    box-shadow:0 10px 25px rgba(0,0,0,.2);
-    transform:translateX(400px);
-    opacity:0;
-    transition:.4s;
-    z-index:9999;
+button:disabled {
+    background: #999;
 }
 
-.mensaje-exito.mostrar{
-    transform:translateX(0);
-    opacity:1;
+/* TOAST */
+.mensaje-exito {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    background: #28a745;
+    color: white;
+    padding: 18px 25px;
+    border-radius: 15px;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,.2);
+    transform: translateX(400px);
+    opacity: 0;
+    transition: .4s;
+    z-index: 9999;
 }
 
-.mensaje-exito i{
-    font-size:28px;
+.mensaje-exito.mostrar {
+    transform: translateX(0);
+    opacity: 1;
 }
 
-@keyframes girar{
-    from{
-        transform:rotate(0deg);
-    }
-    to{
-        transform:rotate(360deg);
-    }
+.mensaje-exito i {
+    font-size: 28px;
 }
-.separador{
-    margin-top:25px;
-    margin-bottom:10px;
-    padding:12px 15px;
-    background:#f8f9fa;
-    border-left:6px solid #E51C22;
-    border-radius:10px;
-    font-size:20px;
-    font-weight:700;
-    color:#E51C22;
+
+@keyframes girar {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.bi-arrow-repeat {
+    display: inline-block;
+    animation: girar 1s linear infinite;
+}
+
+.separador {
+    margin-top: 25px;
+    margin-bottom: 10px;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-left: 6px solid #E51C22;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #E51C22;
+}
+
+/* LOADER de datos */
+#loader {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    color: #E51C22;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+#loader.visible {
+    display: flex;
+}
+
+#loader i {
+    font-size: 22px;
+    animation: girar 1s linear infinite;
 }
 </style>
 </head>
 
 <body>
-    
+
+<!-- TOAST ÉXITO -->
 <div id="mensajeExito" class="mensaje-exito">
     <i class="bi bi-check-circle-fill"></i>
     <span>¡Registrado correctamente!</span>
 </div>
 
+<!-- NAVBAR -->
 <div class="navbar">
     <img src="logo.png" class="logo">
     <div class="navbar-title">Gestión Comercial</div>
 </div>
 
 <div class="container">
-
 <div class="card">
 
-<h2>Formulario de Gestión</h2>
+    <h2>Formulario de Gestión</h2>
 
-<form id="form">
-
-<div class="row">
-
-    <div class="col-30">
-        <label>Región</label>
-        <select id="region">
-            <option value="">Seleccione su respuesta</option>
-        </select>
+    <!-- Indicador de carga de datos maestros -->
+    <div id="loader" class="visible">
+        <i class="bi bi-arrow-repeat"></i>
+        <span>Cargando datos maestros...</span>
     </div>
 
-    <div class="col-60">
-        <label>Tienda</label>
-        <select id="tienda">
+    <form id="form">
+
+        <div class="row">
+            <div class="col-30">
+                <label>Región</label>
+                <select id="region" disabled>
+                    <option value="">Seleccione su respuesta</option>
+                </select>
+            </div>
+
+            <div class="col-60">
+                <label>Tienda</label>
+                <select id="tienda" disabled>
+                    <option value="">Seleccione su respuesta</option>
+                </select>
+            </div>
+
+            <div class="col-10"></div>
+        </div>
+
+        <label>Vendedor</label>
+        <select id="vendedor" disabled>
             <option value="">Seleccione su respuesta</option>
         </select>
-    </div>
 
-    <div class="col-10"></div>
+        <div class="separador">Gestión al Cliente</div>
 
-</div>
+        <div class="row">
+            <div class="col-30">
+                <label>Tipo Doc</label>
+                <select id="tipo_doc">
+                    <option value="">Seleccione su respuesta</option>
+                    <option>DNI</option>
+                    <option>RUC</option>
+                    <option>Pasaporte</option>
+                    <option>Otro</option>
+                </select>
+            </div>
 
-<label>Vendedor</label>
-<select id="vendedor">
-    <option value="">Seleccione su respuesta</option>
-</select>
+            <div class="col-60">
+                <label>Número Documento</label>
+                <input id="num_doc" maxlength="20" required>
+            </div>
 
-<div class="separador">
-    Gestión al Cliente
-</div>
-<div class="row">
+            <div class="col-10"></div>
+        </div>
 
-    <div class="col-30">
-        <label>Tipo Doc</label>
-        <select id="tipo_doc">
+        <input id="tipo_doc_otro" placeholder="Especifique el tipo de documento" style="display:none; margin-top:8px;">
+
+        <label>Base Cliente</label>
+        <select id="base">
             <option value="">Seleccione su respuesta</option>
-            <option>DNI</option>
-            <option>RUC</option>
-            <option>Pasaporte</option>
+            <option>Base Credialtoque</option>
+            <option>Piloto Televentas</option>
+            <option>Base Recompra</option>
+            <option>Base Aprobados sin compra</option>
+            <option>Base CAMPAÑA ELECTRO</option>
+            <option>Base LINEAS APROBADAS</option>
+            <option>Base CREDICASH</option>
+        </select>
+
+        <label>Tipo Gestión</label>
+        <select id="gestion">
+            <option value="">Seleccione su respuesta</option>
+            <option>Telefónica y/o Whatsapp</option>
+            <option>Visita terrena</option>
             <option>Otro</option>
         </select>
-    </div>
 
-    <div class="col-60">
-        <label>Número Documento</label>
-        <input id="num_doc" maxlength="20" required>
-    </div>
+        <input id="gestion_otro" placeholder="Especifique el tipo de gestión" style="display:none; margin-top:8px;">
 
-    <div class="col-10"></div>
+        <label>Resultado</label>
+        <select id="resultado">
+            <option value="">Seleccione su respuesta</option>
+            <option>Cliente se acercará a tienda a compra</option>
+            <option>Cliente no contesta</option>
+            <option>Cliente no se le ubica en vivienda</option>
+            <option>Cliente no desea, por tasa</option>
+            <option>Cliente no desea, no cuenta con inicial</option>
+            <option>Fuera zona</option>
+            <option>Cliente compro al contado</option>
+            <option>Teléfono fuera de servicio / errado</option>
+            <option>No pertenece a la zona</option>
+            <option>Otro</option>
+        </select>
 
-</div>
+        <input id="resultado_otro" placeholder="Especifique el resultado" style="display:none; margin-top:8px;">
 
-<input id="tipo_doc_otro" placeholder="Especifique" style="display:none">
+        <button id="btn" disabled>Guardar Gestión</button>
 
-<label>Base Cliente</label>
-<select id="base">
-    <option value="">Seleccione su respuesta</option>
-    <option>Base Credialtoque</option>
-    <option>Piloto Televentas</option>
-    <option>Base Recompra</option>
-    <option>Base Aprobados sin compra</option>
-    <option>Base CAMPAÑA ELECTRO</option>
-    <option>Base LINEAS APROBADAS</option>
-    <option>Base CREDICASH</option>
-</select>
-
-<label>Tipo Gestión</label>
-<select id="gestion">
-    <option value="">Seleccione su respuesta</option>
-    <option>Telefónica y/o Whatsapp</option>
-    <option>Visita terrena</option>
-    <option>Otro</option>
-</select>
-
-<input id="gestion_otro" placeholder="Especifique" style="display:none">
-
-<label>Resultado</label>
-<select id="resultado">
-    <option value="">Seleccione su respuesta</option>
-    <option>Cliente se acercará a tienda a compra</option>
-    <option>Cliente no contesta</option>
-    <option>Cliente no se le ubica en vivienda</option>
-    <option>Cliente no desea, por tasa</option>
-    <option>Cliente no desea, no cuenta con inicial</option>
-    <option>Fuera zona</option>
-    <option>Cliente compro al contado</option>
-    <option>Teléfono fuera de servicio / errado</option>
-    <option>No pertenece a la zona</option>
-    <option>Otro</option>
-</select>
-
-<input id="resultado_otro" placeholder="Especifique" style="display:none">
-
-<button id="btn">Guardar Gestión</button>
-
-</form>
+    </form>
 
 </div>
-
 </div>
 
 <script>
-
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/1xhk8m9Uv6jVZobdc3txeK9qfiv7mVmVXCbgO-p9T78Y/export?format=csv&gid=0";
+/* ─── CONFIG ───────────────────────────────────────────────── */
+const SHEET_ID  = "1xhk8m9Uv6jVZobdc3txeK9qfiv7mVmVXCbgO-p9T78Y";
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
 const MAESTRO   = "https://corsproxy.io/?" + encodeURIComponent(SHEET_URL);
-    
-const API =
-"https://script.google.com/macros/s/AKfycbxU-wXtXWbRdSYrOW34jIOD5JvEwllVeQ8F2zIhTkM7EAxKR710cuo0ZULd8qAny8SV/exec";
 
+const API = "https://script.google.com/macros/s/AKfycbxU-wXtXWbRdSYrOW34jIOD5JvEwllVeQ8F2zIhTkM7EAxKR710cuo0ZULd8qAny8SV/exec";
+
+/* ─── ESTADO ───────────────────────────────────────────────── */
 let datos = [];
-    
-function clean(v){
-  return (v || "").toString().trim();
+
+/* ─── UTILIDADES ───────────────────────────────────────────── */
+function clean(v) {
+    return (v || "").toString().trim();
 }
 
-Papa.parse(MAESTRO,{
-    download:true,
-    header:true,
-    skipEmptyLines:true,
-    complete:(r)=>{
+function mostrarExito() {
+    const msg = document.getElementById("mensajeExito");
+    msg.classList.add("mostrar");
+    setTimeout(() => msg.classList.remove("mostrar"), 3000);
+}
 
+function resetForm() {
+    form.reset();
+    ["tipo_doc_otro", "gestion_otro", "resultado_otro"].forEach(id => {
+        document.getElementById(id).value = "";
+        document.getElementById(id).style.display = "none";
+    });
+    tienda.innerHTML  = '<option value="">Seleccione su respuesta</option>';
+    vendedor.innerHTML = '<option value="">Seleccione su respuesta</option>';
+}
+
+/* ─── CARGA MAESTRO ────────────────────────────────────────── */
+Papa.parse(MAESTRO, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: (r) => {
         console.log("DATOS:", r.data);
-        console.log("ERRORES:", r.errors);
-
         datos = r.data;
 
-        let regiones = [...new Set(
-            datos.map(x => clean(x.REG))
-                 .filter(x => x)
+        const regiones = [...new Set(
+            datos.map(x => clean(x.REG)).filter(x => x)
         )];
 
-        console.log("REGIONES:", regiones);
-
         region.innerHTML =
-        '<option value="">Seleccione su respuesta</option>' +
-        regiones.map(r => `<option>${r}</option>`).join("");
+            '<option value="">Seleccione su respuesta</option>' +
+            regiones.map(r => `<option>${r}</option>`).join("");
 
+        /* habilitar controles */
+        region.disabled  = false;
+        tienda.disabled  = false;
+        vendedor.disabled = false;
+        btn.disabled     = false;
+
+        document.getElementById("loader").classList.remove("visible");
     },
-    error:(err)=>{
+    error: (err) => {
         console.error("ERROR CSV:", err);
+        document.getElementById("loader").innerHTML =
+            '<i class="bi bi-exclamation-triangle-fill" style="color:#E51C22;font-size:22px"></i>' +
+            '<span style="color:#E51C22">Error al cargar datos. Recargue la página.</span>';
     }
 });
 
-function cargarTiendas(){
+/* ─── CASCADA REGIÓN → TIENDA → VENDEDOR ──────────────────── */
+function cargarTiendas() {
+    const reg = clean(region.value);
+    tienda.innerHTML  = '<option value="">Seleccione su respuesta</option>';
+    vendedor.innerHTML = '<option value="">Seleccione su respuesta</option>';
 
-  let reg = clean(region.value);
+    if (!reg) return;
 
-  tienda.innerHTML = `<option value="">Seleccione su respuesta</option>`;
-  vendedor.innerHTML = `<option value="">Seleccione su respuesta</option>`;
-
-  let tiendas = [...new Set(
-    datos.filter(x=>clean(x.REG)===reg).map(x=>clean(x.TIENDA))
-  )];
-
-  tienda.innerHTML += tiendas.map(t=>`<option>${t}</option>`).join("");
-}
-function mostrarExito(){
-
-    const msg = document.getElementById("mensajeExito");
-
-    msg.classList.add("mostrar");
-
-    setTimeout(()=>{
-        msg.classList.remove("mostrar");
-    },3000);
-
-}
-function cargarVendedores(){
-
-  let reg = clean(region.value);
-  let tie = clean(tienda.value);
-
-  let vend = datos.filter(x =>
-    clean(x.REG)===reg &&
-    clean(x.TIENDA)===tie
-  );
-
-  vendedor.innerHTML = `<option value="">Seleccione su respuesta</option>` +
-  vend.map(v=>`<option value="${v.ID_VEN}">${v.VENDEDOR}</option>`).join("");
+    const tiendas = [...new Set(
+        datos.filter(x => clean(x.REG) === reg).map(x => clean(x.TIENDA))
+    )];
+    tienda.innerHTML += tiendas.map(t => `<option>${t}</option>`).join("");
 }
 
-region.onchange = cargarTiendas;
-tienda.onchange = cargarVendedores;
+function cargarVendedores() {
+    const reg = clean(region.value);
+    const tie = clean(tienda.value);
+    vendedor.innerHTML = '<option value="">Seleccione su respuesta</option>';
 
-tipo_doc.onchange = ()=> tipo_doc_otro.style.display = tipo_doc.value==="Otro"?"block":"none";
-gestion.onchange = ()=> gestion_otro.style.display = gestion.value==="Otro"?"block":"none";
-resultado.onchange = ()=> resultado_otro.style.display = resultado.value==="Otro"?"block":"none";
+    if (!reg || !tie) return;
 
-form.onsubmit = async (e)=>{
-
-e.preventDefault();
-
-if(
-   !region.value ||
-   !tienda.value ||
-   !vendedor.value ||
-   !tipo_doc.value ||
-   !num_doc.value ||
-   !base.value ||
-   !gestion.value ||
-   !resultado.value
-){
-   alert("Complete todos los campos");
-   return;
+    const vend = datos.filter(x =>
+        clean(x.REG) === reg && clean(x.TIENDA) === tie
+    );
+    vendedor.innerHTML += vend.map(v =>
+        `<option value="${v.ID_VEN}">${v.VENDEDOR}</option>`
+    ).join("");
 }
 
-let btn = document.getElementById("btn");
-btn.disabled = true;
-btn.innerHTML =
-'<i class="bi bi-arrow-repeat"></i> Enviando...';
+region.onchange  = cargarTiendas;
+tienda.onchange  = cargarVendedores;
 
-let v = datos.find(x=>x.ID_VEN==vendedor.value);
+/* ─── CAMPOS "OTRO" ────────────────────────────────────────── */
+tipo_doc.onchange = () =>
+    tipo_doc_otro.style.display = tipo_doc.value === "Otro" ? "block" : "none";
 
-if(!v){
-alert("Vendedor no válido");
-btn.disabled = false;
-btn.innerText = "Guardar Gestión";
-return;
-}
-if(tipo_doc.value==="Otro" && !tipo_doc_otro.value.trim()){
-    alert("Especifique el tipo de documento");
-    return;
-}
+gestion.onchange = () =>
+    gestion_otro.style.display = gestion.value === "Otro" ? "block" : "none";
 
-if(gestion.value==="Otro" && !gestion_otro.value.trim()){
-    alert("Especifique el tipo de gestión");
-    return;
-}
+resultado.onchange = () =>
+    resultado_otro.style.display = resultado.value === "Otro" ? "block" : "none";
 
-if(resultado.value==="Otro" && !resultado_otro.value.trim()){
-    alert("Especifique el resultado");
-    return;
-}
-let payload = {
-REG:v.REG,
-TIENDA:v.TIENDA,
-VENDEDOR:v.VENDEDOR,
-ID_VEN:v.ID_VEN,
+/* ─── SUBMIT ───────────────────────────────────────────────── */
+form.onsubmit = async (e) => {
+    e.preventDefault();
 
-TIPO_DOCUMENTO:
-tipo_doc.value==="Otro"
-? tipo_doc_otro.value
-: tipo_doc.value,
+    /* Validación campos obligatorios */
+    if (!region.value || !tienda.value || !vendedor.value ||
+        !tipo_doc.value || !num_doc.value ||
+        !base.value || !gestion.value || !resultado.value) {
+        alert("Complete todos los campos");
+        return;
+    }
 
-NUMERO_DOCUMENTO:num_doc.value,
+    /* Validación campos "Otro" */
+    if (tipo_doc.value === "Otro" && !tipo_doc_otro.value.trim()) {
+        alert("Especifique el tipo de documento");
+        return;
+    }
+    if (gestion.value === "Otro" && !gestion_otro.value.trim()) {
+        alert("Especifique el tipo de gestión");
+        return;
+    }
+    if (resultado.value === "Otro" && !resultado_otro.value.trim()) {
+        alert("Especifique el resultado");
+        return;
+    }
 
-BASE_CLIENTE:base.value,
+    /* Bloquear botón */
+    btn.disabled  = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Enviando...';
 
-TIPO_GESTION:
-gestion.value==="Otro"
-? gestion_otro.value
-: gestion.value,
+    /* Buscar vendedor */
+    const v = datos.find(x => x.ID_VEN == vendedor.value);
+    if (!v) {
+        alert("Vendedor no válido");
+        btn.disabled  = false;
+        btn.innerText = "Guardar Gestión";
+        return;
+    }
 
-RESULTADO:
-resultado.value==="Otro"
-? resultado_otro.value
-: resultado.value
+    const payload = {
+        REG:      v.REG,
+        TIENDA:   v.TIENDA,
+        VENDEDOR: v.VENDEDOR,
+        ID_VEN:   v.ID_VEN,
+
+        TIPO_DOCUMENTO:
+            tipo_doc.value === "Otro" ? tipo_doc_otro.value : tipo_doc.value,
+
+        NUMERO_DOCUMENTO: num_doc.value,
+
+        BASE_CLIENTE: base.value,
+
+        TIPO_GESTION:
+            gestion.value === "Otro" ? gestion_otro.value : gestion.value,
+
+        RESULTADO:
+            resultado.value === "Otro" ? resultado_otro.value : resultado.value
+    };
+
+    try {
+        await fetch(API, {
+            method: "POST",
+            body: new URLSearchParams(payload)
+        });
+
+        mostrarExito();
+        resetForm();
+
+    } catch (err) {
+        alert("Error al guardar. Intente nuevamente.");
+
+    } finally {
+        btn.disabled  = false;
+        btn.innerText = "Guardar Gestión";
+    }
 };
-
-try{
-
-await fetch(API,{
-method:"POST",
-body:new URLSearchParams(payload)
-});
-
-mostrarExito();
-
-form.reset();
-tipo_doc_otro.value="";
-gestion_otro.value="";
-resultado_otro.value="";
-
-tipo_doc_otro.style.display="none";
-gestion_otro.style.display="none";
-resultado_otro.style.display="none";
-tienda.innerHTML =
-'<option value="">Seleccione su respuesta</option>';
-
-vendedor.innerHTML =
-'<option value="">Seleccione su respuesta</option>';
-
-}catch(err){
-alert("Error al guardar");
-
-}finally{
-btn.disabled=false;
-btn.innerText="Guardar Gestión";
-}
-
-};
-.bi-arrow-repeat{
-    animation:girar 1s linear infinite;
-}
-
-
 </script>
 
 </body>
