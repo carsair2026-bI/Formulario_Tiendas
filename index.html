@@ -167,7 +167,7 @@ let payload = {
 
 await fetch(API,{
   method:"POST",
-  body:JSON.stringify(payload)
+  body: new URLSearchParams(payload)
 });
 
 alert("Guardado");
