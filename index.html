@@ -297,11 +297,8 @@ button:disabled {
 
 <script>
 /* ─── CONFIG ───────────────────────────────────────────────── */
-const SHEET_ID  = "1xhk8m9Uv6jVZobdc3txeK9qfiv7mVmVXCbgO-p9T78Y";
-const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
-const MAESTRO   = "https://corsproxy.io/?" + encodeURIComponent(SHEET_URL);
-
 const API = "https://script.google.com/macros/s/AKfycbxU-wXtXWbRdSYrOW34jIOD5JvEwllVeQ8F2zIhTkM7EAxKR710cuo0ZULd8qAny8SV/exec";
+const MAESTRO_URL = API + "?action=maestro";
 
 /* ─── ESTADO ───────────────────────────────────────────────── */
 let datos = [];
@@ -327,38 +324,48 @@ function resetForm() {
     vendedor.innerHTML = '<option value="">Seleccione su respuesta</option>';
 }
 
-/* ─── CARGA MAESTRO ────────────────────────────────────────── */
-Papa.parse(MAESTRO, {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: (r) => {
-        console.log("DATOS:", r.data);
-        datos = r.data;
+/* ─── CARGA MAESTRO desde Apps Script ─────────────────────── */
+function procesarDatos(csvText) {
+    const r = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+    console.log("DATOS:", r.data);
+    datos = r.data;
 
-        const regiones = [...new Set(
-            datos.map(x => clean(x.REG)).filter(x => x)
-        )];
+    const regiones = [...new Set(
+        datos.map(x => clean(x.REG)).filter(x => x)
+    )];
 
-        region.innerHTML =
-            '<option value="">Seleccione su respuesta</option>' +
-            regiones.map(r => `<option>${r}</option>`).join("");
+    region.innerHTML =
+        '<option value="">Seleccione su respuesta</option>' +
+        regiones.map(rg => `<option>${rg}</option>`).join("");
 
-        /* habilitar controles */
-        region.disabled  = false;
-        tienda.disabled  = false;
-        vendedor.disabled = false;
-        btn.disabled     = false;
+    region.disabled   = false;
+    tienda.disabled   = false;
+    vendedor.disabled = false;
+    btn.disabled      = false;
 
-        document.getElementById("loader").classList.remove("visible");
-    },
-    error: (err) => {
-        console.error("ERROR CSV:", err);
-        document.getElementById("loader").innerHTML =
-            '<i class="bi bi-exclamation-triangle-fill" style="color:#E51C22;font-size:22px"></i>' +
-            '<span style="color:#E51C22">Error al cargar datos. Recargue la página.</span>';
+    document.getElementById("loader").classList.remove("visible");
+}
+
+function mostrarErrorCarga() {
+    document.getElementById("loader").innerHTML =
+        '<i class="bi bi-exclamation-triangle-fill" style="color:#E51C22;font-size:22px"></i>' +
+        '<span style="color:#E51C22">Error al cargar datos. Recargue la página.</span>';
+}
+
+async function cargarMaestro() {
+    try {
+        const resp = await fetch(MAESTRO_URL, { cache: "no-store" });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const text = await resp.text();
+        if (!text || text.trim().length < 10) throw new Error("Vacío");
+        procesarDatos(text);
+    } catch(err) {
+        console.error("Error cargando maestro:", err.message);
+        mostrarErrorCarga();
     }
-});
+}
+
+cargarMaestro();
 
 /* ─── CASCADA REGIÓN → TIENDA → VENDEDOR ──────────────────── */
 function cargarTiendas() {
