@@ -103,11 +103,52 @@ button{
 button:disabled{
     background:#999;
 }
+.mensaje-exito{
+    position:fixed;
+    top:30px;
+    right:30px;
+    background:#28a745;
+    color:white;
+    padding:18px 25px;
+    border-radius:15px;
+    font-size:18px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    box-shadow:0 10px 25px rgba(0,0,0,.2);
+    transform:translateX(400px);
+    opacity:0;
+    transition:.4s;
+    z-index:9999;
+}
 
+.mensaje-exito.mostrar{
+    transform:translateX(0);
+    opacity:1;
+}
+
+.mensaje-exito i{
+    font-size:28px;
+}
+
+@keyframes girar{
+    from{
+        transform:rotate(0deg);
+    }
+    to{
+        transform:rotate(360deg);
+    }
+}
 </style>
 </head>
 
 <body>
+    
+<div id="mensajeExito" class="mensaje-exito">
+    <i class="bi bi-check-circle-fill"></i>
+    <span>¡Registrado correctamente!</span>
+</div>
 
 <div class="navbar">
     <img src="logo.png" class="logo">
@@ -162,7 +203,7 @@ button:disabled{
 
     <div class="col-60">
         <label>Número Documento</label>
-        <input id="num_doc">
+        <input id="num_doc" maxlength="20" required>
     </div>
 
     <div class="col-10"></div>
@@ -227,7 +268,7 @@ const API =
 "https://script.google.com/macros/s/AKfycbxU-wXtXWbRdSYrOW34jIOD5JvEwllVeQ8F2zIhTkM7EAxKR710cuo0ZULd8qAny8SV/exec";
 
 let datos = [];
-
+    
 function clean(v){
   return (v || "").toString().trim();
 }
@@ -260,7 +301,17 @@ function cargarTiendas(){
 
   tienda.innerHTML += tiendas.map(t=>`<option>${t}</option>`).join("");
 }
+function mostrarExito(){
 
+    const msg = document.getElementById("mensajeExito");
+
+    msg.classList.add("mostrar");
+
+    setTimeout(()=>{
+        msg.classList.remove("mostrar");
+    },3000);
+
+}
 function cargarVendedores(){
 
   let reg = clean(region.value);
@@ -286,14 +337,24 @@ form.onsubmit = async (e)=>{
 
 e.preventDefault();
 
-if(!region.value || !tienda.value || !vendedor.value){
-alert("Complete los campos obligatorios");
-return;
+if(
+   !region.value ||
+   !tienda.value ||
+   !vendedor.value ||
+   !tipo_doc.value ||
+   !num_doc.value ||
+   !base.value ||
+   !gestion.value ||
+   !resultado.value
+){
+   alert("Complete todos los campos");
+   return;
 }
 
 let btn = document.getElementById("btn");
 btn.disabled = true;
-btn.innerText = "Enviando...";
+btn.innerHTML =
+'<i class="bi bi-arrow-repeat"></i> Enviando...';
 
 let v = datos.find(x=>x.ID_VEN==vendedor.value);
 
@@ -303,17 +364,44 @@ btn.disabled = false;
 btn.innerText = "Guardar Gestión";
 return;
 }
+if(tipo_doc.value==="Otro" && !tipo_doc_otro.value.trim()){
+    alert("Especifique el tipo de documento");
+    return;
+}
 
+if(gestion.value==="Otro" && !gestion_otro.value.trim()){
+    alert("Especifique el tipo de gestión");
+    return;
+}
+
+if(resultado.value==="Otro" && !resultado_otro.value.trim()){
+    alert("Especifique el resultado");
+    return;
+}
 let payload = {
 REG:v.REG,
 TIENDA:v.TIENDA,
 VENDEDOR:v.VENDEDOR,
 ID_VEN:v.ID_VEN,
-TIPO_DOCUMENTO:tipo_doc.value,
+
+TIPO_DOCUMENTO:
+tipo_doc.value==="Otro"
+? tipo_doc_otro.value
+: tipo_doc.value,
+
 NUMERO_DOCUMENTO:num_doc.value,
+
 BASE_CLIENTE:base.value,
-TIPO_GESTION:gestion.value,
-RESULTADO:resultado.value
+
+TIPO_GESTION:
+gestion.value==="Otro"
+? gestion_otro.value
+: gestion.value,
+
+RESULTADO:
+resultado.value==="Otro"
+? resultado_otro.value
+: resultado.value
 };
 
 try{
@@ -323,8 +411,21 @@ method:"POST",
 body:new URLSearchParams(payload)
 });
 
-alert("Guardado correctamente");
+mostrarExito();
+
 form.reset();
+tipo_doc_otro.value="";
+gestion_otro.value="";
+resultado_otro.value="";
+
+tipo_doc_otro.style.display="none";
+gestion_otro.style.display="none";
+resultado_otro.style.display="none";
+tienda.innerHTML =
+'<option value="">Seleccione su respuesta</option>';
+
+vendedor.innerHTML =
+'<option value="">Seleccione su respuesta</option>';
 
 }catch(err){
 alert("Error al guardar");
@@ -335,6 +436,10 @@ btn.innerText="Guardar Gestión";
 }
 
 };
+.bi-arrow-repeat{
+    animation:girar 1s linear infinite;
+}
+
 
 </script>
 
