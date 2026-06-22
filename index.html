@@ -14,6 +14,7 @@ button{margin-top:20px;padding:10px}
 </style>
 
 </head>
+
 <body>
 
 <h2>Formulario Gestión Comercial</h2>
@@ -78,56 +79,83 @@ button{margin-top:20px;padding:10px}
 
 <input id="resultado_otro" placeholder="Especifique" style="display:none">
 
-<button>Guardar</button>
+<button type="submit">Guardar</button>
 
 </form>
 
 <script>
 
 const MAESTRO =
-"https://docs.google.com/spreadsheets/d/1xhk8m9Uv6jVZobdc3txeK9qfiv7mVmVXCbgO-p9T78Y/gviz/tq?tqx=out:csv";
-const API = "https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnTlkIHGYn5cI2oFP45UDJ_CHHi_1MFcRiOTJnq9LPZdzpzSDimMZq-Z-Bl6dGOxX12_RkcDV5QQr4Pxo33XIhmyiso0srQV-ec9Ax91sWNQ59Epk2a11Xy3whsZywX9zN_WGKEnP2WPBmUgqjKAc-jERltAcnrlyR4koUqkkmQDRmxsCExsjkECe4aXKF2SUnBmDsW6TKfCtkeARcTrpj141bGbF9mhT296NkjNGV3U_8OVtpryVWU-qMrifLmrbrkY_yCCCsM9XO3JHmauRsB9e7nhew&lib=MSrS5IE-SQFL3E4R-ULEYqBGwzk8kkhS3";
+"https://docs.google.com/spreadsheets/d/1xhk8m9Uv6jVZobdc3txeK9qfiv7mVmVXCbgO-p9T78Y/export?format=csv&gid=0";
+
+const API =
+"PEGA_AQUI_TU_WEB_APP_URL";
 
 let datos = [];
+
+function clean(v){
+  return (v || "").toString().trim();
+}
 
 Papa.parse(MAESTRO,{
   download:true,
   header:true,
+  skipEmptyLines:true,
   complete:(r)=>{
 
     datos = r.data;
 
-    let regiones = [...new Set(datos.map(x=>x.REG))];
+    console.log("MAESTRO CARGADO:", datos);
 
-    region.innerHTML = regiones.map(r=>`<option>${r}</option>`).join("");
+    let regiones = [...new Set(datos.map(x => clean(x.REG)))];
 
+    region.innerHTML = regiones
+      .filter(Boolean)
+      .map(r => `<option>${r}</option>`)
+      .join("");
+
+    region.selectedIndex = 0;
     cargarTiendas();
 
+  },
+  error:(err)=>{
+    console.error("ERROR CSV:", err);
   }
 });
 
 function cargarTiendas(){
 
-  let reg = region.value;
+  let reg = clean(region.value);
 
-  let tiendas = [...new Set(datos.filter(x=>x.REG===reg).map(x=>x.TIENDA))];
+  let tiendas = [...new Set(
+    datos
+      .filter(x => clean(x.REG) === reg)
+      .map(x => clean(x.TIENDA))
+  )];
 
-  tienda.innerHTML = tiendas.map(t=>`<option>${t}</option>`).join("");
+  tienda.innerHTML = tiendas
+    .filter(Boolean)
+    .map(t => `<option>${t}</option>`)
+    .join("");
 
   cargarVendedores();
 }
 
 function cargarVendedores(){
 
-  let reg = region.value;
-  let tie = tienda.value;
+  let reg = clean(region.value);
+  let tie = clean(tienda.value);
 
-  let vend = datos.filter(x=>x.REG===reg && x.TIENDA===tie);
+  let vend = datos.filter(x =>
+    clean(x.REG) === reg &&
+    clean(x.TIENDA) === tie
+  );
 
-  vendedor.innerHTML = vend.map(v=>`
+  vendedor.innerHTML = vend.map(v => `
     <option value="${v.ID_VEN}">
       ${v.VENDEDOR}
-    </option>`).join("");
+    </option>
+  `).join("");
 }
 
 region.onchange = cargarTiendas;
@@ -135,44 +163,59 @@ tienda.onchange = cargarVendedores;
 
 tipo_doc.onchange = () => {
   tipo_doc_otro.style.display =
-  tipo_doc.value==="Otro" ? "block":"none";
-}
+    tipo_doc.value === "Otro" ? "block" : "none";
+};
 
 gestion.onchange = () => {
   gestion_otro.style.display =
-  gestion.value==="Otro" ? "block":"none";
-}
+    gestion.value === "Otro" ? "block" : "none";
+};
 
 resultado.onchange = () => {
   resultado_otro.style.display =
-  resultado.value==="Otro" ? "block":"none";
-}
-
-form.onsubmit = async (e)=>{
-
-e.preventDefault();
-
-let v = datos.find(x=>x.ID_VEN==vendedor.value);
-
-let payload = {
-  REG:v.REG,
-  TIENDA:v.TIENDA,
-  VENDEDOR:v.VENDEDOR,
-  ID_VEN:v.ID_VEN,
-  TIPO_DOCUMENTO:tipo_doc.value,
-  NUMERO_DOCUMENTO:num_doc.value,
-  BASE_CLIENTE:base.value,
-  TIPO_GESTION:gestion.value,
-  RESULTADO:resultado.value
+    resultado.value === "Otro" ? "block" : "none";
 };
 
-await fetch(API,{
-  method:"POST",
-  body: new URLSearchParams(payload)
-});
+form.onsubmit = async (e) => {
 
-alert("Guardado");
-form.reset();
+  e.preventDefault();
+
+  let v = datos.find(x => x.ID_VEN == vendedor.value);
+
+  if (!v) {
+    alert("Error: vendedor no encontrado");
+    return;
+  }
+
+  let payload = {
+    REG: v.REG,
+    TIENDA: v.TIENDA,
+    VENDEDOR: v.VENDEDOR,
+    ID_VEN: v.ID_VEN,
+    TIPO_DOCUMENTO: tipo_doc.value,
+    NUMERO_DOCUMENTO: num_doc.value,
+    BASE_CLIENTE: base.value,
+    TIPO_GESTION: gestion.value,
+    RESULTADO: resultado.value
+  };
+
+  try {
+
+    let res = await fetch(API, {
+      method: "POST",
+      body: new URLSearchParams(payload)
+    });
+
+    console.log(await res.text());
+
+    alert("Guardado correctamente");
+
+    form.reset();
+
+  } catch (err) {
+    console.error(err);
+    alert("Error al guardar");
+  }
 
 };
 
