@@ -12,12 +12,7 @@
 
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'Segoe UI',sans-serif;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
 
 body{
     background:linear-gradient(135deg,#f5f7fa,#e4e8f0);
@@ -31,20 +26,12 @@ body{
     padding:12px 30px;
     margin-bottom:25px;
     display:flex;
-    justify-content:space-between;
     align-items:center;
+    gap:20px;
     box-shadow:0 10px 30px rgba(0,0,0,.15);
 }
 
-.navbar-left{
-    display:flex;
-    align-items:center;
-    gap:20px;
-}
-
-.logo{
-    height:80px;
-}
+.logo{height:80px;}
 
 .navbar-title{
     color:white;
@@ -66,16 +53,7 @@ body{
     border-left:8px solid #E51C22;
 }
 
-.card h2{
-    margin-bottom:15px;
-    color:#E51C22;
-}
-
-label{
-    display:block;
-    margin-top:12px;
-    font-weight:600;
-}
+label{display:block;margin-top:12px;font-weight:600;}
 
 select,input{
     width:100%;
@@ -98,20 +76,9 @@ button{
     cursor:pointer;
 }
 
-button:hover{
-    background:#c4161c;
-}
-
-@media(max-width:900px){
-    .container{
-        grid-template-columns:1fr;
-    }
-    .navbar-title{
-        font-size:28px;
-    }
-    .logo{
-        height:60px;
-    }
+button:disabled{
+    background:#999;
+    cursor:not-allowed;
 }
 
 </style>
@@ -120,85 +87,85 @@ button:hover{
 <body>
 
 <div class="navbar">
-
-    <div class="navbar-left">
-        <img src="logo.png" class="logo">
-        <div class="navbar-title">Gestión Comercial</div>
-    </div>
-
+    <img src="logo.png" class="logo">
+    <div class="navbar-title">Gestión Comercial</div>
 </div>
 
 <div class="container">
 
-    <div class="card">
+<div class="card">
 
-        <h2>Formulario de Gestión</h2>
+<h2>Formulario de Gestión</h2>
 
-        <form id="form">
+<form id="form">
 
-            <label>Región</label>
-            <select id="region"></select>
+<label>Región</label>
+<select id="region"></select>
 
-            <label>Tienda</label>
-            <select id="tienda"></select>
+<label>Tienda</label>
+<select id="tienda"></select>
 
-            <label>Vendedor</label>
-            <select id="vendedor"></select>
+<label>Vendedor</label>
+<select id="vendedor"></select>
 
-            <label>Tipo Documento</label>
-            <select id="tipo_doc">
-                <option>DNI</option>
-                <option>RUC</option>
-                <option>Pasaporte</option>
-                <option>Otro</option>
-            </select>
+<label>Tipo Documento</label>
+<select id="tipo_doc">
+    <option value="">Seleccione su respuesta</option>
+    <option>DNI</option>
+    <option>RUC</option>
+    <option>Pasaporte</option>
+    <option>Otro</option>
+</select>
 
-            <input id="tipo_doc_otro" placeholder="Especifique" style="display:none">
+<input id="tipo_doc_otro" placeholder="Especifique" style="display:none">
 
-            <label>Número Documento</label>
-            <input id="num_doc">
+<label>Número Documento</label>
+<input id="num_doc">
 
-            <label>Base Cliente</label>
-            <select id="base">
-                <option>Base Credialtoque</option>
-                <option>Piloto Televentas</option>
-                <option>Base Recompra</option>
-                <option>Base Aprobados sin compra</option>
-                <option>Base CAMPAÑA ELECTRO</option>
-                <option>Base LINEAS APROBADAS</option>
-                <option>Base CREDICASH</option>
-            </select>
+<label>Base Cliente</label>
+<select id="base">
+    <option value="">Seleccione su respuesta</option>
+    <option>Base Credialtoque</option>
+    <option>Piloto Televentas</option>
+    <option>Base Recompra</option>
+    <option>Base Aprobados sin compra</option>
+    <option>Base CAMPAÑA ELECTRO</option>
+    <option>Base LINEAS APROBADAS</option>
+    <option>Base CREDICASH</option>
+</select>
 
-            <label>Tipo Gestión</label>
-            <select id="gestion">
-                <option>Telefónica y/o Whatsapp</option>
-                <option>Visita terrena</option>
-                <option>Otro</option>
-            </select>
+<label>Tipo Gestión</label>
+<select id="gestion">
+    <option value="">Seleccione su respuesta</option>
+    <option>Telefónica y/o Whatsapp</option>
+    <option>Visita terrena</option>
+    <option>Otro</option>
+</select>
 
-            <input id="gestion_otro" placeholder="Especifique" style="display:none">
+<input id="gestion_otro" placeholder="Especifique" style="display:none">
 
-            <label>Resultado</label>
-            <select id="resultado">
-                <option>Cliente se acercará a tienda a compra</option>
-                <option>Cliente no contesta</option>
-                <option>Cliente no se le ubica en vivienda</option>
-                <option>Cliente no desea, por tasa</option>
-                <option>Cliente no desea, no cuenta con inicial</option>
-                <option>Fuera zona</option>
-                <option>Cliente compro al contado</option>
-                <option>Teléfono fuera de servicio / errado</option>
-                <option>No pertenece a la zona</option>
-                <option>Otro</option>
-            </select>
+<label>Resultado</label>
+<select id="resultado">
+    <option value="">Seleccione su respuesta</option>
+    <option>Cliente se acercará a tienda a compra</option>
+    <option>Cliente no contesta</option>
+    <option>Cliente no se le ubica en vivienda</option>
+    <option>Cliente no desea, por tasa</option>
+    <option>Cliente no desea, no cuenta con inicial</option>
+    <option>Fuera zona</option>
+    <option>Cliente compro al contado</option>
+    <option>Teléfono fuera de servicio / errado</option>
+    <option>No pertenece a la zona</option>
+    <option>Otro</option>
+</select>
 
-            <input id="resultado_otro" placeholder="Especifique" style="display:none">
+<input id="resultado_otro" placeholder="Especifique" style="display:none">
 
-            <button type="submit">Guardar Gestión</button>
+<button id="btn">Guardar Gestión</button>
 
-        </form>
+</form>
 
-    </div>
+</div>
 
 </div>
 
@@ -207,7 +174,8 @@ button:hover{
 const MAESTRO =
 "https://docs.google.com/spreadsheets/d/1xhk8m9Uv6jVZobdc3txeK9qfiv7mVmVXCbgO-p9T78Y/export?format=csv&gid=0";
 
-const API = "https://script.google.com/macros/s/AKfycbxU-wXtXWbRdSYrOW34jIOD5JvEwllVeQ8F2zIhTkM7EAxKR710cuo0ZULd8qAny8SV/exec";
+const API =
+"https://script.google.com/macros/s/AKfycbxU-wXtXWbRdSYrOW34jIOD5JvEwllVeQ8F2zIhTkM7EAxKR710cuo0ZULd8qAny8SV/exec";
 
 let datos = [];
 
@@ -220,18 +188,13 @@ Papa.parse(MAESTRO,{
   header:true,
   skipEmptyLines:true,
   complete:(r)=>{
-
     datos = r.data;
 
-    let regiones = [...new Set(datos.map(x => clean(x.REG)))];
+    let regiones = [...new Set(datos.map(x=>clean(x.REG)))];
 
-    region.innerHTML = regiones
-      .filter(Boolean)
-      .map(r => `<option>${r}</option>`)
-      .join("");
-
-    region.selectedIndex = 0;
-    cargarTiendas();
+    region.innerHTML =
+    `<option value="">Seleccione su respuesta</option>` +
+    regiones.map(r=>`<option>${r}</option>`).join("");
 
   }
 });
@@ -241,17 +204,14 @@ function cargarTiendas(){
   let reg = clean(region.value);
 
   let tiendas = [...new Set(
-    datos.filter(x => clean(x.REG) === reg)
-         .map(x => clean(x.TIENDA))
+    datos.filter(x=>clean(x.REG)===reg)
+         .map(x=>clean(x.TIENDA))
   )];
 
-  tienda.innerHTML = tiendas
-    .filter(Boolean)
-    .map(t => `<option>${t}</option>`)
-    .join("");
+  tienda.innerHTML =
+  `<option value="">Seleccione su respuesta</option>` +
+  tiendas.map(t=>`<option>${t}</option>`).join("");
 
-  tienda.selectedIndex = 0;
-  cargarVendedores();
 }
 
 function cargarVendedores(){
@@ -260,67 +220,76 @@ function cargarVendedores(){
   let tie = clean(tienda.value);
 
   let vend = datos.filter(x =>
-    clean(x.REG) === reg &&
-    clean(x.TIENDA) === tie
+    clean(x.REG)===reg &&
+    clean(x.TIENDA)===tie
   );
 
-  vendedor.innerHTML = vend.map(v => `
-    <option value="${v.ID_VEN}">
-      ${v.VENDEDOR}
-    </option>
-  `).join("");
+  vendedor.innerHTML =
+  `<option value="">Seleccione su respuesta</option>` +
+  vend.map(v=>`<option value="${v.ID_VEN}">${v.VENDEDOR}</option>`).join("");
 
-  vendedor.selectedIndex = 0;
 }
 
-region.onchange = cargarTiendas;
+region.onchange = ()=>{cargarTiendas(); vendedor.innerHTML='<option value="">Seleccione su respuesta</option>';};
 tienda.onchange = cargarVendedores;
 
-tipo_doc.onchange = () => {
-  tipo_doc_otro.style.display =
-    tipo_doc.value === "Otro" ? "block" : "none";
+tipo_doc.onchange = ()=> tipo_doc_otro.style.display = tipo_doc.value==="Otro"?"block":"none";
+gestion.onchange = ()=> gestion_otro.style.display = gestion.value==="Otro"?"block":"none";
+resultado.onchange = ()=> resultado_otro.style.display = resultado.value==="Otro"?"block":"none";
+
+form.onsubmit = async (e)=>{
+
+e.preventDefault();
+
+if(
+!region.value ||
+!tienda.value ||
+!vendedor.value ||
+!tipo_doc.value ||
+!base.value ||
+!gestion.value ||
+!resultado.value
+){
+alert("Debe completar todos los campos obligatorios");
+return;
+}
+
+let btn = document.getElementById("btn");
+
+btn.disabled = true;
+btn.innerText = "Enviando...";
+
+let v = datos.find(x=>x.ID_VEN==vendedor.value);
+
+let payload = {
+REG:v.REG,
+TIENDA:v.TIENDA,
+VENDEDOR:v.VENDEDOR,
+ID_VEN:v.ID_VEN,
+TIPO_DOCUMENTO:tipo_doc.value,
+NUMERO_DOCUMENTO:num_doc.value,
+BASE_CLIENTE:base.value,
+TIPO_GESTION:gestion.value,
+RESULTADO:resultado.value
 };
 
-gestion.onchange = () => {
-  gestion_otro.style.display =
-    gestion.value === "Otro" ? "block" : "none";
-};
+try{
 
-resultado.onchange = () => {
-  resultado_otro.style.display =
-    resultado.value === "Otro" ? "block" : "none";
-};
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams(payload)
+});
 
-form.onsubmit = async (e) => {
+alert("Guardado correctamente");
+form.reset();
 
-  e.preventDefault();
+}catch(err){
+alert("Error al guardar");
 
-  let v = datos.find(x => x.ID_VEN == vendedor.value);
-
-  if(!v){
-    alert("Vendedor no encontrado");
-    return;
-  }
-
-  let payload = {
-    REG:v.REG,
-    TIENDA:v.TIENDA,
-    VENDEDOR:v.VENDEDOR,
-    ID_VEN:v.ID_VEN,
-    TIPO_DOCUMENTO:tipo_doc.value,
-    NUMERO_DOCUMENTO:num_doc.value,
-    BASE_CLIENTE:base.value,
-    TIPO_GESTION:gestion.value,
-    RESULTADO:resultado.value
-  };
-
-  await fetch(API,{
-    method:"POST",
-    body:new URLSearchParams(payload)
-  });
-
-  alert("Guardado correctamente");
-  form.reset();
+}finally{
+btn.disabled=false;
+btn.innerText="Guardar Gestión";
+}
 
 };
 
