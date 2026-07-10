@@ -9,8 +9,6 @@
 <link rel="icon" type="image/png" href="./icono.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
-<!-- Librerías para generar el PDF en el navegador -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
@@ -34,7 +32,6 @@ body {
     margin: auto;
 }
 
-/* NAV */
 .navbar {
     background: #E51C22;
     border-radius: 25px;
@@ -53,7 +50,6 @@ body {
     font-weight: 800;
 }
 
-/* CARD */
 .card {
     background: white;
     border-radius: 20px;
@@ -62,7 +58,6 @@ body {
     border-left: 8px solid #E51C22;
 }
 
-/* ROW SYSTEM */
 .row {
     display: flex;
     gap: 10px;
@@ -88,7 +83,6 @@ select, input {
     border: 1px solid #ddd;
 }
 
-/* BUTTON */
 button {
     margin-top: 20px;
     padding: 12px;
@@ -106,7 +100,6 @@ button:disabled {
     background: #999;
 }
 
-/* Botón secundario (descargar lista de clientes) */
 .btn-descarga {
     margin-top: 10px;
     background: white;
@@ -126,7 +119,6 @@ button:disabled {
     font-size: 18px;
 }
 
-/* TOAST */
 .mensaje-exito {
     position: fixed;
     top: 30px;
@@ -178,7 +170,6 @@ button:disabled {
     color: #E51C22;
 }
 
-/* LOADER de datos */
 #loader {
     display: none;
     align-items: center;
@@ -196,18 +187,15 @@ button:disabled {
     font-size: 22px;
     animation: girar 1s linear infinite;
 }
+
 </style>
 </head>
 
 <body>
-
-<!-- TOAST ÉXITO -->
 <div id="mensajeExito" class="mensaje-exito">
     <i class="bi bi-check-circle-fill"></i>
     <span>¡Registrado correctamente!</span>
 </div>
-
-<!-- NAVBAR -->
 <div class="navbar">
     <img src="logo.png" class="logo">
     <div class="navbar-title">Gestión Comercial</div>
@@ -217,8 +205,6 @@ button:disabled {
 <div class="card">
 
     <h2>Formulario de Gestión</h2>
-
-    <!-- Indicador de carga de datos maestros -->
     <div id="loader" class="visible">
         <i class="bi bi-arrow-repeat"></i>
         <span>Preparando Formulario ...</span>
@@ -248,13 +234,14 @@ button:disabled {
         <select id="vendedor" disabled>
             <option value="">Seleccione su respuesta</option>
         </select>
-
-        <!-- Botón que aparece solo cuando hay vendedor seleccionado -->
         <button type="button" id="btnDescargarLista" class="btn-descarga">
             <i class="bi bi-file-earmark-pdf-fill"></i>
             <span id="btnDescargarListaTexto">Descargar Lista de Clientes</span>
         </button>
-
+        <div id="loaderClientes" style="display:none;align-items:center;gap:8px;margin-top:10px;color:#E51C22;font-weight:600">
+            <i class="bi bi-arrow-repeat"></i>
+            <span>Cargando base de clientes...</span>
+        </div>
         <div class="separador">Gestión al Cliente</div>
 
         <div class="row">
@@ -322,17 +309,13 @@ button:disabled {
 </div>
 
 <script>
-/* ─── CONFIG ───────────────────────────────────────────────── */
 const API = "https://script.google.com/macros/s/AKfycbxU-wXtXWbRdSYrOW34jIOD5JvEwllVeQ8F2zIhTkM7EAxKR710cuo0ZULd8qAny8SV/exec";
 const MAESTRO_URL   = API + "?action=maestro";
 const CLIENTES_URL  = API + "?action=clientes";
-
-/* ─── ESTADO ───────────────────────────────────────────────── */
-let datos = [];          // maestro: región / tienda / vendedor
-let clientes = [];       // listado de clientes por vendedor
-let pdfDescargado = false; // se marca en "SI" si el usuario descargó el PDF de este vendedor
-
-/* ─── UTILIDADES ───────────────────────────────────────────── */
+let datos = []; 
+let clientes = [];
+let clientesCargados = false;
+let pdfDescargado = false;
 function clean(v) {
     return (v || "").toString().trim();
 }
@@ -355,7 +338,6 @@ function resetForm() {
     pdfDescargado = false;
 }
 
-/* ─── CARGA MAESTRO desde Apps Script ─────────────────────── */
 function procesarDatos(csvText) {
     const r = Papa.parse(csvText, { header: true, skipEmptyLines: true });
     datos = r.data;
@@ -395,25 +377,44 @@ async function cargarMaestro() {
     }
 }
 
-/* ─── CARGA de la lista de CLIENTES (segunda hoja) ────────── */
 async function cargarClientes() {
+
+    mostrarLoaderClientes();
+
     try {
-        const resp = await fetch(CLIENTES_URL, { cache: "no-store" });
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+        const resp = await fetch(CLIENTES_URL, {
+            cache: "no-store"
+        });
+
+        if (!resp.ok)
+            throw new Error("HTTP " + resp.status);
+
         const text = await resp.text();
-        const r = Papa.parse(text, { header: true, skipEmptyLines: true });
+
+        const r = Papa.parse(text, {
+            header: true,
+            skipEmptyLines: true
+        });
+
         clientes = r.data;
+
     } catch(err) {
+
         console.error("Error cargando clientes:", err.message);
-        // No bloqueamos el formulario si esto falla; solo no habrá botón de descarga.
         clientes = [];
+
+    } finally {
+
+        clientesCargados = true;
+        ocultarLoaderClientes();
+
     }
 }
 
 cargarMaestro();
 cargarClientes();
 
-/* ─── CASCADA REGIÓN → TIENDA → VENDEDOR ──────────────────── */
 function cargarTiendas() {
     const reg = clean(region.value);
     tienda.innerHTML  = '<option value="">Seleccione su respuesta</option>';
@@ -427,7 +428,13 @@ function cargarTiendas() {
     )];
     tienda.innerHTML += tiendas.map(t => `<option>${t}</option>`).join("");
 }
+function mostrarLoaderClientes() {
+    document.getElementById("loaderClientes").style.display = "flex";
+}
 
+function ocultarLoaderClientes() {
+    document.getElementById("loaderClientes").style.display = "none";
+}
 function cargarVendedores() {
     const reg = clean(region.value);
     const tie = clean(tienda.value);
@@ -447,7 +454,6 @@ function cargarVendedores() {
 region.onchange  = cargarTiendas;
 tienda.onchange  = cargarVendedores;
 
-/* ─── BOTÓN "DESCARGAR LISTA DE CLIENTES" ─────────────────── */
 function clientesDelVendedor(idVen) {
     const idVenLimpio = clean(idVen);
     return clientes.filter(c => clean(c.DOC_VENDEDOR) === idVenLimpio);
@@ -459,11 +465,19 @@ function ocultarBotonDescarga() {
 }
 
 function actualizarBotonDescarga() {
-    const btnDesc = document.getElementById("btnDescargarLista");
-    const texto   = document.getElementById("btnDescargarListaTexto");
 
-    // Cada vez que cambia el vendedor, se reinicia el estado de descarga
+    const btnDesc = document.getElementById("btnDescargarLista");
+    const texto = document.getElementById("btnDescargarListaTexto");
+
     pdfDescargado = false;
+
+    if (!clientesCargados) {
+        mostrarLoaderClientes();
+        ocultarBotonDescarga();
+        return;
+    }
+
+    ocultarLoaderClientes();
 
     if (!vendedor.value) {
         ocultarBotonDescarga();
@@ -479,12 +493,10 @@ function actualizarBotonDescarga() {
 
     texto.textContent = `Descargar Lista de Clientes (${misClientes.length})`;
     btnDesc.classList.add("visible");
-}
 
-// Se dispara cada vez que cambia el vendedor (además de cargarVendedores)
+}
 vendedor.addEventListener("change", actualizarBotonDescarga);
 
-/* ─── GENERAR PDF con jsPDF + autotable ────────────────────── */
 document.getElementById("btnDescargarLista").onclick = () => {
     const idVen = vendedor.value;
     if (!idVen) return;
@@ -533,12 +545,9 @@ document.getElementById("btnDescargarLista").onclick = () => {
     });
 
     doc.save(`Clientes_${nombreVendedor.replace(/\s+/g, "_")}.pdf`);
-
-    // Marcamos que este vendedor SÍ descargó su lista
     pdfDescargado = true;
 };
 
-/* ─── CAMPOS "OTRO" ────────────────────────────────────────── */
 tipo_doc.onchange = () =>
     tipo_doc_otro.style.display = tipo_doc.value === "Otro" ? "block" : "none";
 
@@ -548,19 +557,14 @@ gestion.onchange = () =>
 resultado.onchange = () =>
     resultado_otro.style.display = resultado.value === "Otro" ? "block" : "none";
 
-/* ─── SUBMIT ───────────────────────────────────────────────── */
 form.onsubmit = async (e) => {
     e.preventDefault();
-
-    /* Validación campos obligatorios */
     if (!region.value || !tienda.value || !vendedor.value ||
         !tipo_doc.value || !num_doc.value ||
         !base.value || !gestion.value || !resultado.value) {
         alert("Complete todos los campos");
         return;
     }
-
-    /* Validación campos "Otro" */
     if (tipo_doc.value === "Otro" && !tipo_doc_otro.value.trim()) {
         alert("Especifique el tipo de documento");
         return;
@@ -573,12 +577,9 @@ form.onsubmit = async (e) => {
         alert("Especifique el resultado");
         return;
     }
-
-    /* Bloquear botón */
     btn.disabled  = true;
     btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Enviando...';
 
-    /* Buscar vendedor */
     const v = datos.find(x => x.ID_VEN == vendedor.value);
     if (!v) {
         alert("Vendedor no válido");
