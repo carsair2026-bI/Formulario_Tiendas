@@ -10,6 +10,10 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
+<!-- Librerías para generar el PDF en el navegador -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
 <style>
 * {
     margin: 0;
@@ -100,6 +104,26 @@ button {
 
 button:disabled {
     background: #999;
+}
+
+/* Botón secundario (descargar lista de clientes) */
+.btn-descarga {
+    margin-top: 10px;
+    background: white;
+    color: #E51C22;
+    border: 2px solid #E51C22;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-descarga.visible {
+    display: flex;
+}
+
+.btn-descarga i {
+    font-size: 18px;
 }
 
 /* TOAST */
@@ -225,6 +249,12 @@ button:disabled {
             <option value="">Seleccione su respuesta</option>
         </select>
 
+        <!-- Botón que aparece solo cuando hay vendedor seleccionado -->
+        <button type="button" id="btnDescargarLista" class="btn-descarga">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+            <span id="btnDescargarListaTexto">Descargar Lista de Clientes</span>
+        </button>
+
         <div class="separador">Gestión al Cliente</div>
 
         <div class="row">
@@ -294,10 +324,13 @@ button:disabled {
 <script>
 /* ─── CONFIG ───────────────────────────────────────────────── */
 const API = "https://script.google.com/macros/s/AKfycbxU-wXtXWbRdSYrOW34jIOD5JvEwllVeQ8F2zIhTkM7EAxKR710cuo0ZULd8qAny8SV/exec";
-const MAESTRO_URL = API + "?action=maestro";
+const MAESTRO_URL   = API + "?action=maestro";
+const CLIENTES_URL  = API + "?action=clientes";
 
 /* ─── ESTADO ───────────────────────────────────────────────── */
-let datos = [];
+let datos = [];          // maestro: región / tienda / vendedor
+let clientes = [];       // listado de clientes por vendedor
+let pdfDescargado = false; // se marca en "SI" si el usuario descargó el PDF de este vendedor
 
 /* ─── UTILIDADES ───────────────────────────────────────────── */
 function clean(v) {
@@ -318,12 +351,13 @@ function resetForm() {
     });
     tienda.innerHTML  = '<option value="">Seleccione su respuesta</option>';
     vendedor.innerHTML = '<option value="">Seleccione su respuesta</option>';
+    ocultarBotonDescarga();
+    pdfDescargado = false;
 }
 
 /* ─── CARGA MAESTRO desde Apps Script ─────────────────────── */
 function procesarDatos(csvText) {
     const r = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-    console.log("DATOS:", r.data);
     datos = r.data;
 
     const regiones = [...new Set(
@@ -361,13 +395,30 @@ async function cargarMaestro() {
     }
 }
 
+/* ─── CARGA de la lista de CLIENTES (segunda hoja) ────────── */
+async function cargarClientes() {
+    try {
+        const resp = await fetch(CLIENTES_URL, { cache: "no-store" });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const text = await resp.text();
+        const r = Papa.parse(text, { header: true, skipEmptyLines: true });
+        clientes = r.data;
+    } catch(err) {
+        console.error("Error cargando clientes:", err.message);
+        // No bloqueamos el formulario si esto falla; solo no habrá botón de descarga.
+        clientes = [];
+    }
+}
+
 cargarMaestro();
+cargarClientes();
 
 /* ─── CASCADA REGIÓN → TIENDA → VENDEDOR ──────────────────── */
 function cargarTiendas() {
     const reg = clean(region.value);
     tienda.innerHTML  = '<option value="">Seleccione su respuesta</option>';
     vendedor.innerHTML = '<option value="">Seleccione su respuesta</option>';
+    ocultarBotonDescarga();
 
     if (!reg) return;
 
@@ -381,6 +432,7 @@ function cargarVendedores() {
     const reg = clean(region.value);
     const tie = clean(tienda.value);
     vendedor.innerHTML = '<option value="">Seleccione su respuesta</option>';
+    ocultarBotonDescarga();
 
     if (!reg || !tie) return;
 
@@ -394,6 +446,97 @@ function cargarVendedores() {
 
 region.onchange  = cargarTiendas;
 tienda.onchange  = cargarVendedores;
+
+/* ─── BOTÓN "DESCARGAR LISTA DE CLIENTES" ─────────────────── */
+function clientesDelVendedor(idVen) {
+    const idVenLimpio = clean(idVen);
+    return clientes.filter(c => clean(c.DOC_VENDEDOR) === idVenLimpio);
+}
+
+function ocultarBotonDescarga() {
+    const btnDesc = document.getElementById("btnDescargarLista");
+    btnDesc.classList.remove("visible");
+}
+
+function actualizarBotonDescarga() {
+    const btnDesc = document.getElementById("btnDescargarLista");
+    const texto   = document.getElementById("btnDescargarListaTexto");
+
+    // Cada vez que cambia el vendedor, se reinicia el estado de descarga
+    pdfDescargado = false;
+
+    if (!vendedor.value) {
+        ocultarBotonDescarga();
+        return;
+    }
+
+    const misClientes = clientesDelVendedor(vendedor.value);
+
+    if (misClientes.length === 0) {
+        ocultarBotonDescarga();
+        return;
+    }
+
+    texto.textContent = `Descargar Lista de Clientes (${misClientes.length})`;
+    btnDesc.classList.add("visible");
+}
+
+// Se dispara cada vez que cambia el vendedor (además de cargarVendedores)
+vendedor.addEventListener("change", actualizarBotonDescarga);
+
+/* ─── GENERAR PDF con jsPDF + autotable ────────────────────── */
+document.getElementById("btnDescargarLista").onclick = () => {
+    const idVen = vendedor.value;
+    if (!idVen) return;
+
+    const nombreVendedor = vendedor.options[vendedor.selectedIndex].text;
+    const misClientes = clientesDelVendedor(idVen);
+
+    if (misClientes.length === 0) {
+        alert("No se encontraron clientes para este vendedor.");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape" });
+
+    doc.setFontSize(14);
+    doc.text(`Lista de Clientes - ${nombreVendedor}`, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Fecha de generación: ${new Date().toLocaleString()}`, 14, 21);
+
+    const columnas = [
+        "DNI", "Nombre", "Perfil", "ODV", "Teléfono 1", "Teléfono 2",
+        "MAF Electro", "MAF Moto", "Región", "Tienda", "Producto"
+    ];
+
+    const filas = misClientes.map(c => [
+        clean(c.DNI),
+        clean(c.NOMBRE),
+        clean(c["PERFIL 2"]),
+        clean(c.ODV),
+        clean(c.CET),
+        clean(c.CEL1),
+        clean(c.MAF_TEORICO_ELECTRO),
+        clean(c.MAF_TEORICO_MOTO),
+        clean(c.REGION_COMER),
+        clean(c.NOM_TIENDA),
+        clean(c.PRODUCTO_INTERNO)
+    ]);
+
+    doc.autoTable({
+        startY: 26,
+        head: [columnas],
+        body: filas,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [229, 28, 34] }
+    });
+
+    doc.save(`Clientes_${nombreVendedor.replace(/\s+/g, "_")}.pdf`);
+
+    // Marcamos que este vendedor SÍ descargó su lista
+    pdfDescargado = true;
+};
 
 /* ─── CAMPOS "OTRO" ────────────────────────────────────────── */
 tipo_doc.onchange = () =>
@@ -461,7 +604,9 @@ form.onsubmit = async (e) => {
             gestion.value === "Otro" ? gestion_otro.value : gestion.value,
 
         RESULTADO:
-            resultado.value === "Otro" ? resultado_otro.value : resultado.value
+            resultado.value === "Otro" ? resultado_otro.value : resultado.value,
+
+        DESCARGO_PDF: pdfDescargado ? "SI" : "NO"
     };
 
     try {
