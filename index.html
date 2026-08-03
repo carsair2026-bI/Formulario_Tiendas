@@ -516,11 +516,6 @@ document.getElementById("btnDescargarLista").onclick = () => {
     format: "legal"
 });
 
-    doc.setFontSize(14);
-    doc.text(`Lista de Clientes - ${nombreVendedor}`, 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Fecha de generación: ${new Date().toLocaleString()}`, 14, 21);
-
     const columnas = [
         "DNI", "Nombre", "Perfil", "ODV", "Teléfono 1", "Teléfono 2",
         "MAF Electro", "MAF Moto", "Producto","Dirección"
@@ -541,6 +536,13 @@ document.getElementById("btnDescargarLista").onclick = () => {
 
     doc.autoTable({
     startY: 26,
+
+    margin: {
+        top: 26
+    },
+
+    showHead: "everyPage",
+
     head: [columnas],
     body: filas,
 
@@ -578,6 +580,7 @@ headStyles: {
     },
 
     didDrawPage: function (data) {
+
     if (data.pageNumber === 1) {
         doc.setFontSize(14);
         doc.text(`Lista de Clientes - ${nombreVendedor}`, 14, 15);
@@ -586,6 +589,14 @@ headStyles: {
         doc.text(`Fecha de generación: ${new Date().toLocaleString()}`, 14, 21);
     }
 
+    const totalPaginas = doc.internal.getNumberOfPages();
+
+    doc.setFontSize(9);
+    doc.text(
+        `Página ${data.pageNumber} de ${totalPaginas}`,
+        doc.internal.pageSize.getWidth() - 35,
+        doc.internal.pageSize.getHeight() - 8
+    );
 }
 });
 
