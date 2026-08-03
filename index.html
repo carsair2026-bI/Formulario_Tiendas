@@ -518,7 +518,7 @@ document.getElementById("btnDescargarLista").onclick = () => {
 
     const columnas = [
         "DNI", "Nombre", "Perfil", "ODV", "Teléfono 1", "Teléfono 2",
-        "MAF Electro", "MAF Moto", "Producto","Dirección"
+        "MAF Electro", "MAF Moto", "Producto","Distrito","Dirección"
     ];
 
     const filas = misClientes.map(c => [
@@ -531,6 +531,7 @@ document.getElementById("btnDescargarLista").onclick = () => {
         clean(c.MAF_TEORICO_ELECTRO),
         clean(c.MAF_TEORICO_MOTO),
         clean(c.PRODUCTO_INTERNO),
+        clean(c.LOCACION),
         clean(c.DIRECCION)
     ]);
 
@@ -573,7 +574,8 @@ headStyles: {
         6: { cellWidth: 18 },   // MAF Electro
         7: { cellWidth: 18 },   // MAF Moto
         8: { cellWidth: 30 },   // Producto
-        9: {                   // Dirección
+        9: { cellWidth: 20 },   // Distrito
+        10: {                   // Dirección
             cellWidth: 95,
             overflow: "linebreak"
         }
