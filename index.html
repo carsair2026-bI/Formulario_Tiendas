@@ -578,11 +578,15 @@ headStyles: {
     },
 
     didDrawPage: function (data) {
+    if (data.pageNumber === 1) {
         doc.setFontSize(14);
         doc.text(`Lista de Clientes - ${nombreVendedor}`, 14, 15);
+
         doc.setFontSize(10);
         doc.text(`Fecha de generación: ${new Date().toLocaleString()}`, 14, 21);
     }
+
+}
 });
 
     doc.save(`Clientes_${nombreVendedor.replace(/\s+/g, "_")}.pdf`);
