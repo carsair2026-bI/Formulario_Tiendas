@@ -510,7 +510,11 @@ document.getElementById("btnDescargarLista").onclick = () => {
     }
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: "landscape" });
+    const doc = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "legal"
+});
 
     doc.setFontSize(14);
     doc.text(`Lista de Clientes - ${nombreVendedor}`, 14, 15);
@@ -519,7 +523,7 @@ document.getElementById("btnDescargarLista").onclick = () => {
 
     const columnas = [
         "DNI", "Nombre", "Perfil", "ODV", "Teléfono 1", "Teléfono 2",
-        "MAF Electro", "MAF Moto", "Región", "Tienda", "Producto"
+        "MAF Electro", "MAF Moto", "Producto","Dirección"
     ];
 
     const filas = misClientes.map(c => [
@@ -531,18 +535,55 @@ document.getElementById("btnDescargarLista").onclick = () => {
         clean(c.CEL1),
         clean(c.MAF_TEORICO_ELECTRO),
         clean(c.MAF_TEORICO_MOTO),
-        clean(c.REGION_COMER),
-        clean(c.NOM_TIENDA),
-        clean(c.PRODUCTO_INTERNO)
+        clean(c.PRODUCTO_INTERNO),
+        clean(c.DIRECCION)
     ]);
 
     doc.autoTable({
-        startY: 26,
-        head: [columnas],
-        body: filas,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [229, 28, 34] }
-    });
+    startY: 26,
+    head: [columnas],
+    body: filas,
+
+    theme: "grid",
+
+   styles: {
+    fontSize: 6.5,
+    cellPadding: 2,
+    overflow: "linebreak",
+    valign: "middle"
+},
+
+headStyles: {
+    fillColor: [229, 28, 34],
+    textColor: 255,
+    fontStyle: "bold",
+    halign: "center",
+    valign: "middle"
+},
+
+    columnStyles: {
+        0: { cellWidth: 40 },   // DNI
+        1: { cellWidth: 45 },   // Nombre
+        2: { cellWidth: 12 },   // Perfil
+        3: { cellWidth: 18 },   // ODV
+        4: { cellWidth: 25 },   // Teléfono 1
+        5: { cellWidth: 25 },   // Teléfono 2
+        6: { cellWidth: 18 },   // MAF Electro
+        7: { cellWidth: 18 },   // MAF Moto
+        8: { cellWidth: 30 },   // Producto
+        9: {                   // Dirección
+            cellWidth: 95,
+            overflow: "linebreak"
+        }
+    },
+
+    didDrawPage: function (data) {
+        doc.setFontSize(14);
+        doc.text(`Lista de Clientes - ${nombreVendedor}`, 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Fecha de generación: ${new Date().toLocaleString()}`, 14, 21);
+    }
+});
 
     doc.save(`Clientes_${nombreVendedor.replace(/\s+/g, "_")}.pdf`);
     pdfDescargado = true;
@@ -579,7 +620,7 @@ form.onsubmit = async (e) => {
     }
     btn.disabled  = true;
     btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Enviando...';
-
+    
     const v = datos.find(x => x.ID_VEN == vendedor.value);
     if (!v) {
         alert("Vendedor no válido");
