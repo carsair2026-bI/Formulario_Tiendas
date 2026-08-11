@@ -636,11 +636,6 @@ headStyles: {
 tipo_doc.onchange = () =>
     tipo_doc_otro.style.display = tipo_doc.value === "Otro" ? "block" : "none";
 
-gestion.onchange = () =>
-    gestion_otro.style.display = gestion.value === "Otro" ? "block" : "none";
-
-resultado.onchange = () =>
-    resultado_otro.style.display = resultado.value === "Otro" ? "block" : "none";
 
 form.onsubmit = async (e) => {
 
@@ -666,24 +661,6 @@ form.onsubmit = async (e) => {
     ) {
         alert("Especifique el tipo de documento");
         tipo_doc_otro.focus();
-        return;
-    }
-
-    if (
-        gestion.value === "Otro" &&
-        !gestion_otro.value.trim()
-    ) {
-        alert("Especifique el tipo de gestión");
-        gestion_otro.focus();
-        return;
-    }
-
-    if (
-        resultado.value === "Otro" &&
-        !resultado_otro.value.trim()
-    ) {
-        alert("Especifique el resultado");
-        resultado_otro.focus();
         return;
     }
 
