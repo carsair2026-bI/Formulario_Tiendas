@@ -353,22 +353,44 @@ function procesarDatos(csvText) {
     document.getElementById("loader").classList.remove("visible");
 }
 
-function mostrarErrorCarga() {
+function mostrarErrorCarga(mensaje = "Error al cargar datos. Recargue la página.") {
     document.getElementById("loader").innerHTML =
         '<i class="bi bi-exclamation-triangle-fill" style="color:#E51C22;font-size:22px"></i>' +
-        '<span style="color:#E51C22">Error al cargar datos. Recargue la página.</span>';
+        `<span style="color:#E51C22">${mensaje}</span>`;
 }
 
 async function cargarMaestro() {
     try {
-        const resp = await fetch(MAESTRO_URL, { cache: "no-store" });
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const resp = await fetch(MAESTRO_URL, {
+            method: "GET",
+            cache: "no-store",
+            redirect: "follow"
+        });
+
         const text = await resp.text();
-        if (!text || text.trim().length < 10) throw new Error("Vacío");
+
+        console.log("Estado maestro:", resp.status);
+        console.log("URL final:", resp.url);
+        console.log("Respuesta maestro:", text.substring(0, 500));
+        if (!text || text.trim().length < 10) {
+            throw new Error("La respuesta del maestro está vacía");
+        }
+        if (
+            text.trim().startsWith("<!DOCTYPE") ||
+            text.trim().startsWith("<html") ||
+            text.includes("<title>Sign in")
+        ) {
+            throw new Error("Google Apps Script devolvió HTML en lugar de CSV");
+        }
+
         procesarDatos(text);
-    } catch(err) {
-        console.error("Error cargando maestro:", err.message);
-        mostrarErrorCarga();
+
+    } catch (err) {
+        console.error("Error cargando maestro:", err);
+
+        mostrarErrorCarga(
+            "Error al cargar datos: " + err.message
+        );
     }
 }
 
