@@ -685,22 +685,29 @@ form.onsubmit = async (e) => {
         DESCARGO_PDF: pdfDescargado ? "SI" : "NO"
     };
 
-    try {
-        await fetch(API, {
-            method: "POST",
-            body: new URLSearchParams(payload)
-        });
+   try {
 
-        mostrarExito();
-        resetForm();
+    await fetch(API, {
+        method: "POST",
+        mode: "no-cors",
+        body: new URLSearchParams(payload)
+    });
 
-    } catch (err) {
-        alert("Error al guardar. Intente nuevamente.");
+    mostrarExito();
+    resetForm();
 
-    } finally {
-        btn.disabled  = false;
-        btn.innerText = "Guardar Gestión";
-    }
+} catch (err) {
+
+    console.error("Error al enviar gestión:", err);
+
+    alert("Error al guardar. Intente nuevamente.");
+
+} finally {
+
+    btn.disabled = false;
+    btn.innerText = "Guardar Gestión";
+
+}
 };
 </script>
 
