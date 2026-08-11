@@ -322,14 +322,24 @@ function mostrarExito() {
 }
 
 function resetForm() {
+
     form.reset();
-    ["tipo_doc_otro", "gestion_otro", "resultado_otro"].forEach(id => {
-        document.getElementById(id).value = "";
-        document.getElementById(id).style.display = "none";
-    });
-    tienda.innerHTML  = '<option value="">Seleccione su respuesta</option>';
-    vendedor.innerHTML = '<option value="">Seleccione su respuesta</option>';
+
+    const tipoDocOtro = document.getElementById("tipo_doc_otro");
+
+    if (tipoDocOtro) {
+        tipoDocOtro.value = "";
+        tipoDocOtro.style.display = "none";
+    }
+
+    tienda.innerHTML =
+        '<option value="">Seleccione su respuesta</option>';
+
+    vendedor.innerHTML =
+        '<option value="">Seleccione su respuesta</option>';
+
     ocultarBotonDescarga();
+
     pdfDescargado = false;
 }
 
@@ -633,81 +643,142 @@ resultado.onchange = () =>
     resultado_otro.style.display = resultado.value === "Otro" ? "block" : "none";
 
 form.onsubmit = async (e) => {
+
     e.preventDefault();
-    if (!region.value || !tienda.value || !vendedor.value ||
-        !tipo_doc.value || !num_doc.value ||
-        !base.value || !gestion.value || !resultado.value) {
+
+    if (
+        !region.value ||
+        !tienda.value ||
+        !vendedor.value ||
+        !tipo_doc.value ||
+        !num_doc.value.trim() ||
+        !base.value ||
+        !gestion.value ||
+        !resultado.value
+    ) {
         alert("Complete todos los campos");
         return;
     }
-    if (tipo_doc.value === "Otro" && !tipo_doc_otro.value.trim()) {
+
+    if (
+        tipo_doc.value === "Otro" &&
+        !tipo_doc_otro.value.trim()
+    ) {
         alert("Especifique el tipo de documento");
+        tipo_doc_otro.focus();
         return;
     }
-    if (gestion.value === "Otro" && !gestion_otro.value.trim()) {
+
+    if (
+        gestion.value === "Otro" &&
+        !gestion_otro.value.trim()
+    ) {
         alert("Especifique el tipo de gestión");
+        gestion_otro.focus();
         return;
     }
-    if (resultado.value === "Otro" && !resultado_otro.value.trim()) {
+
+    if (
+        resultado.value === "Otro" &&
+        !resultado_otro.value.trim()
+    ) {
         alert("Especifique el resultado");
+        resultado_otro.focus();
         return;
     }
-    btn.disabled  = true;
-    btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Enviando...';
-    
-    const v = datos.find(x => x.ID_VEN == vendedor.value);
+
+    const v = datos.find(
+        x => clean(x.ID_VEN) == clean(vendedor.value)
+    );
+
     if (!v) {
         alert("Vendedor no válido");
-        btn.disabled  = false;
-        btn.innerText = "Guardar Gestión";
         return;
     }
 
+    btn.disabled = true;
+
+    btn.innerHTML =
+        '<i class="bi bi-arrow-repeat"></i> Enviando...';
+    
     const payload = {
-        REG:      v.REG,
-        TIENDA:   v.TIENDA,
-        VENDEDOR: v.VENDEDOR,
-        ID_VEN:   v.ID_VEN,
+
+        REG: clean(v.REG),
+
+        TIENDA: clean(v.TIENDA),
+
+        VENDEDOR: clean(v.VENDEDOR),
+
+        ID_VEN: clean(v.ID_VEN),
 
         TIPO_DOCUMENTO:
-            tipo_doc.value === "Otro" ? tipo_doc_otro.value : tipo_doc.value,
+            tipo_doc.value === "Otro"
+                ? tipo_doc_otro.value.trim()
+                : tipo_doc.value,
 
-        NUMERO_DOCUMENTO: num_doc.value,
+        NUMERO_DOCUMENTO:
+            num_doc.value.trim(),
 
-        BASE_CLIENTE: base.value,
+        BASE_CLIENTE:
+            base.value,
 
         TIPO_GESTION:
-            gestion.value === "Otro" ? gestion_otro.value : gestion.value,
+            gestion.value === "Otro"
+                ? gestion_otro.value.trim()
+                : gestion.value,
 
         RESULTADO:
-            resultado.value === "Otro" ? resultado_otro.value : resultado.value,
+            resultado.value === "Otro"
+                ? resultado_otro.value.trim()
+                : resultado.value,
 
-        DESCARGO_PDF: pdfDescargado ? "SI" : "NO"
+        DESCARGO_PDF:
+            pdfDescargado ? "SI" : "NO"
     };
 
-   try {
 
-    await fetch(API, {
-        method: "POST",
-        mode: "no-cors",
-        body: new URLSearchParams(payload)
-    });
+    console.log("Enviando gestión:", payload);
 
-    mostrarExito();
-    resetForm();
 
-} catch (err) {
+    try {
 
-    console.error("Error al enviar gestión:", err);
+        await fetch(API, {
 
-    alert("Error al guardar. Intente nuevamente.");
+            method: "POST",
 
-} finally {
+            mode: "no-cors",
 
-    btn.disabled = false;
-    btn.innerText = "Guardar Gestión";
+            body: new URLSearchParams(payload)
 
-}
+        });
+
+
+        console.log("Solicitud enviada correctamente");
+
+        mostrarExito();
+
+        resetForm();
+
+
+    } catch (err) {
+
+        console.error(
+            "Error enviando gestión:",
+            err
+        );
+
+        alert(
+            "Error al guardar. Intente nuevamente."
+        );
+
+    } finally {
+
+        btn.disabled = false;
+
+        btn.innerText =
+            "Guardar Gestión";
+
+    }
 };
 </script>
 
