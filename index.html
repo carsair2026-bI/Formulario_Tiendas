@@ -8,7 +8,7 @@
 <link rel="shortcut icon" href="./icono.png">
 <link rel="icon" type="image/png" href="./icono.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
@@ -187,7 +187,6 @@ button:disabled {
     font-size: 22px;
     animation: girar 1s linear infinite;
 }
-
 </style>
 </head>
 
@@ -304,13 +303,16 @@ button:disabled {
 </div>
 
 <script>
+// URL de la implementación web de Apps Script (si crea una NUEVA implementación, cámbiela aquí)
 const API = "https://script.google.com/macros/s/AKfycbxU-wXtXWbRdSYrOW34jIOD5JvEwllVeQ8F2zIhTkM7EAxKR710cuo0ZULd8qAny8SV/exec";
-const MAESTRO_URL   = API + "?action=maestro";
-const CLIENTES_URL  = API + "?action=clientes";
-let datos = []; 
+const MAESTRO_URL  = API + "?action=maestro";
+const CLIENTES_URL = API + "?action=clientes";
+
+let datos = [];
 let clientes = [];
 let clientesCargados = false;
 let pdfDescargado = false;
+
 function clean(v) {
     return (v || "").toString().trim();
 }
@@ -322,30 +324,49 @@ function mostrarExito() {
 }
 
 function resetForm() {
-
     form.reset();
 
     const tipoDocOtro = document.getElementById("tipo_doc_otro");
-
     if (tipoDocOtro) {
         tipoDocOtro.value = "";
         tipoDocOtro.style.display = "none";
     }
 
-    tienda.innerHTML =
-        '<option value="">Seleccione su respuesta</option>';
-
-    vendedor.innerHTML =
-        '<option value="">Seleccione su respuesta</option>';
+    tienda.innerHTML = '<option value="">Seleccione su respuesta</option>';
+    vendedor.innerHTML = '<option value="">Seleccione su respuesta</option>';
 
     ocultarBotonDescarga();
-
     pdfDescargado = false;
 }
 
-function procesarDatos(csvText) {
-    const r = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-    datos = r.data;
+/* ===== Lectura de Excel (llega en base64 desde Apps Script) ===== */
+async function traerExcel(url, hojaPreferida) {
+    const resp = await fetch(url, { method: "GET", cache: "no-store", redirect: "follow" });
+    const text = (await resp.text()).trim();
+
+    if (!text) throw new Error("La respuesta está vacía");
+    if (text.startsWith("ERROR:")) throw new Error(text.substring(6).trim());
+    if (text.startsWith("<")) {
+        throw new Error("Apps Script devolvió HTML. Revise que la implementación sea 'Cualquier usuario' y esté autorizada");
+    }
+
+    const wb = XLSX.read(text, { type: "base64" });
+    const nombreHoja = (hojaPreferida && wb.SheetNames.includes(hojaPreferida))
+        ? hojaPreferida
+        : wb.SheetNames[0];
+
+    const filas = XLSX.utils.sheet_to_json(wb.Sheets[nombreHoja], { defval: "", raw: false });
+
+    // Limpia espacios en los nombres de columna
+    return filas.map(f => {
+        const o = {};
+        Object.keys(f).forEach(k => { o[k.trim()] = f[k]; });
+        return o;
+    });
+}
+
+function procesarDatos(filas) {
+    datos = filas;
 
     const regiones = [...new Set(
         datos.map(x => clean(x.REG)).filter(x => x)
@@ -364,78 +385,36 @@ function procesarDatos(csvText) {
 }
 
 function mostrarErrorCarga(mensaje = "Error al cargar datos. Recargue la página.") {
-    document.getElementById("loader").innerHTML =
-        '<i class="bi bi-exclamation-triangle-fill" style="color:#E51C22;font-size:22px"></i>' +
+    const l = document.getElementById("loader");
+    l.classList.add("visible");
+    l.innerHTML =
+        '<i class="bi bi-exclamation-triangle-fill" style="color:#E51C22;font-size:22px;animation:none"></i>' +
         `<span style="color:#E51C22">${mensaje}</span>`;
 }
 
 async function cargarMaestro() {
     try {
-        const resp = await fetch(MAESTRO_URL, {
-            method: "GET",
-            cache: "no-store",
-            redirect: "follow"
-        });
-
-        const text = await resp.text();
-
-        console.log("Estado maestro:", resp.status);
-        console.log("URL final:", resp.url);
-        console.log("Respuesta maestro:", text.substring(0, 500));
-        if (!text || text.trim().length < 10) {
-            throw new Error("La respuesta del maestro está vacía");
-        }
-        if (
-            text.trim().startsWith("<!DOCTYPE") ||
-            text.trim().startsWith("<html") ||
-            text.includes("<title>Sign in")
-        ) {
-            throw new Error("Google Apps Script devolvió HTML en lugar de CSV");
-        }
-
-        procesarDatos(text);
-
+        const filas = await traerExcel(MAESTRO_URL, "BASE");
+        console.log("Maestro cargado:", filas.length, "filas");
+        procesarDatos(filas);
     } catch (err) {
         console.error("Error cargando maestro:", err);
-
-        mostrarErrorCarga(
-            "Error al cargar datos: " + err.message
-        );
+        mostrarErrorCarga("Error al cargar datos: " + err.message);
     }
 }
 
 async function cargarClientes() {
-
     mostrarLoaderClientes();
-
     try {
-
-        const resp = await fetch(CLIENTES_URL, {
-            cache: "no-store"
-        });
-
-        if (!resp.ok)
-            throw new Error("HTTP " + resp.status);
-
-        const text = await resp.text();
-
-        const r = Papa.parse(text, {
-            header: true,
-            skipEmptyLines: true
-        });
-
-        clientes = r.data;
-
-    } catch(err) {
-
+        clientes = await traerExcel(CLIENTES_URL);
+        console.log("Clientes cargados:", clientes.length, "filas");
+    } catch (err) {
         console.error("Error cargando clientes:", err.message);
         clientes = [];
-
     } finally {
-
         clientesCargados = true;
         ocultarLoaderClientes();
-
+        if (vendedor.value) actualizarBotonDescarga();
     }
 }
 
@@ -444,7 +423,7 @@ cargarClientes();
 
 function cargarTiendas() {
     const reg = clean(region.value);
-    tienda.innerHTML  = '<option value="">Seleccione su respuesta</option>';
+    tienda.innerHTML = '<option value="">Seleccione su respuesta</option>';
     vendedor.innerHTML = '<option value="">Seleccione su respuesta</option>';
     ocultarBotonDescarga();
 
@@ -455,6 +434,7 @@ function cargarTiendas() {
     )];
     tienda.innerHTML += tiendas.map(t => `<option>${t}</option>`).join("");
 }
+
 function mostrarLoaderClientes() {
     document.getElementById("loaderClientes").style.display = "flex";
 }
@@ -462,6 +442,7 @@ function mostrarLoaderClientes() {
 function ocultarLoaderClientes() {
     document.getElementById("loaderClientes").style.display = "none";
 }
+
 function cargarVendedores() {
     const reg = clean(region.value);
     const tie = clean(tienda.value);
@@ -478,8 +459,8 @@ function cargarVendedores() {
     ).join("");
 }
 
-region.onchange  = cargarTiendas;
-tienda.onchange  = cargarVendedores;
+region.onchange = cargarTiendas;
+tienda.onchange = cargarVendedores;
 
 function clientesDelVendedor(idVen) {
     const idVenLimpio = clean(idVen);
@@ -487,12 +468,10 @@ function clientesDelVendedor(idVen) {
 }
 
 function ocultarBotonDescarga() {
-    const btnDesc = document.getElementById("btnDescargarLista");
-    btnDesc.classList.remove("visible");
+    document.getElementById("btnDescargarLista").classList.remove("visible");
 }
 
 function actualizarBotonDescarga() {
-
     const btnDesc = document.getElementById("btnDescargarLista");
     const texto = document.getElementById("btnDescargarListaTexto");
 
@@ -520,7 +499,6 @@ function actualizarBotonDescarga() {
 
     texto.textContent = `Descargar Lista de Clientes (${misClientes.length})`;
     btnDesc.classList.add("visible");
-
 }
 vendedor.addEventListener("change", actualizarBotonDescarga);
 
@@ -537,15 +515,11 @@ document.getElementById("btnDescargarLista").onclick = () => {
     }
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({
-    orientation: "landscape",
-    unit: "mm",
-    format: "legal"
-});
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "legal" });
 
     const columnas = [
         "DNI", "Nombre", "Perfil", "ODV", "Teléfono 1", "Teléfono 2",
-        "MAF Electro", "MAF Moto", "Producto","Distrito","Dirección"
+        "MAF Electro", "MAF Moto", "Producto", "Distrito", "Dirección"
     ];
 
     const filas = misClientes.map(c => [
@@ -563,71 +537,49 @@ document.getElementById("btnDescargarLista").onclick = () => {
     ]);
 
     doc.autoTable({
-    startY: 26,
-
-    margin: {
-        top: 26
-    },
-
-    showHead: "everyPage",
-
-    head: [columnas],
-    body: filas,
-
-    theme: "grid",
-
-   styles: {
-    fontSize: 6.5,
-    cellPadding: 2,
-    overflow: "linebreak",
-    valign: "middle"
-},
-
-headStyles: {
-    fillColor: [229, 28, 34],
-    textColor: 255,
-    fontStyle: "bold",
-    halign: "center",
-    valign: "middle"
-},
-
-    columnStyles: {
-        0: { cellWidth: 25 },   // DNI
-        1: { cellWidth: 45 },   // Nombre
-        2: { cellWidth: 12 },   // Perfil
-        3: { cellWidth: 18 },   // ODV
-        4: { cellWidth: 20 },   // Teléfono 1
-        5: { cellWidth: 20 },   // Teléfono 2
-        6: { cellWidth: 18 },   // MAF Electro
-        7: { cellWidth: 18 },   // MAF Moto
-        8: { cellWidth: 30 },   // Producto
-        9: { cellWidth: 20 },   // Distrito
-        10: {                   // Dirección
-            cellWidth: 95,
-            overflow: "linebreak"
+        startY: 26,
+        margin: { top: 26 },
+        showHead: "everyPage",
+        head: [columnas],
+        body: filas,
+        theme: "grid",
+        styles: { fontSize: 6.5, cellPadding: 2, overflow: "linebreak", valign: "middle" },
+        headStyles: {
+            fillColor: [229, 28, 34],
+            textColor: 255,
+            fontStyle: "bold",
+            halign: "center",
+            valign: "middle"
+        },
+        columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 45 },
+            2: { cellWidth: 12 },
+            3: { cellWidth: 18 },
+            4: { cellWidth: 20 },
+            5: { cellWidth: 20 },
+            6: { cellWidth: 18 },
+            7: { cellWidth: 18 },
+            8: { cellWidth: 30 },
+            9: { cellWidth: 20 },
+            10: { cellWidth: 95, overflow: "linebreak" }
+        },
+        didDrawPage: function (data) {
+            if (data.pageNumber === 1) {
+                doc.setFontSize(14);
+                doc.text(`Lista de Clientes - ${nombreVendedor}`, 14, 15);
+                doc.setFontSize(10);
+                doc.text(`Fecha de generación: ${new Date().toLocaleString()}`, 14, 21);
+            }
+            const totalPaginas = doc.internal.getNumberOfPages();
+            doc.setFontSize(9);
+            doc.text(
+                `Página ${data.pageNumber} de ${totalPaginas}`,
+                doc.internal.pageSize.getWidth() - 35,
+                doc.internal.pageSize.getHeight() - 8
+            );
         }
-    },
-
-    didDrawPage: function (data) {
-
-    if (data.pageNumber === 1) {
-        doc.setFontSize(14);
-        doc.text(`Lista de Clientes - ${nombreVendedor}`, 14, 15);
-
-        doc.setFontSize(10);
-        doc.text(`Fecha de generación: ${new Date().toLocaleString()}`, 14, 21);
-    }
-
-    const totalPaginas = doc.internal.getNumberOfPages();
-
-    doc.setFontSize(9);
-    doc.text(
-        `Página ${data.pageNumber} de ${totalPaginas}`,
-        doc.internal.pageSize.getWidth() - 35,
-        doc.internal.pageSize.getHeight() - 8
-    );
-}
-});
+    });
 
     doc.save(`Clientes_${nombreVendedor.replace(/\s+/g, "_")}.pdf`);
     pdfDescargado = true;
@@ -636,37 +588,26 @@ headStyles: {
 tipo_doc.onchange = () =>
     tipo_doc_otro.style.display = tipo_doc.value === "Otro" ? "block" : "none";
 
-
 form.onsubmit = async (e) => {
 
     e.preventDefault();
 
     if (
-        !region.value ||
-        !tienda.value ||
-        !vendedor.value ||
-        !tipo_doc.value ||
-        !num_doc.value.trim() ||
-        !base.value ||
-        !gestion.value ||
-        !resultado.value
+        !region.value || !tienda.value || !vendedor.value ||
+        !tipo_doc.value || !num_doc.value.trim() ||
+        !base.value || !gestion.value || !resultado.value
     ) {
         alert("Complete todos los campos");
         return;
     }
 
-    if (
-        tipo_doc.value === "Otro" &&
-        !tipo_doc_otro.value.trim()
-    ) {
+    if (tipo_doc.value === "Otro" && !tipo_doc_otro.value.trim()) {
         alert("Especifique el tipo de documento");
         tipo_doc_otro.focus();
         return;
     }
 
-    const v = datos.find(
-        x => clean(x.ID_VEN) == clean(vendedor.value)
-    );
+    const v = datos.find(x => clean(x.ID_VEN) == clean(vendedor.value));
 
     if (!v) {
         alert("Vendedor no válido");
@@ -674,87 +615,44 @@ form.onsubmit = async (e) => {
     }
 
     btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Enviando...';
 
-    btn.innerHTML =
-        '<i class="bi bi-arrow-repeat"></i> Enviando...';
-    
     const payload = {
-
         REG: clean(v.REG),
-
         TIENDA: clean(v.TIENDA),
-
         VENDEDOR: clean(v.VENDEDOR),
-
         ID_VEN: clean(v.ID_VEN),
-
-        TIPO_DOCUMENTO:
-            tipo_doc.value === "Otro"
-                ? tipo_doc_otro.value.trim()
-                : tipo_doc.value,
-
-        NUMERO_DOCUMENTO:
-            num_doc.value.trim(),
-
-        BASE_CLIENTE:
-            base.value,
-
-        TIPO_GESTION:
-            gestion.value === "Otro"
-                ? gestion_otro.value.trim()
-                : gestion.value,
-
-        RESULTADO:
-            resultado.value === "Otro"
-                ? resultado_otro.value.trim()
-                : resultado.value,
-
-        DESCARGO_PDF:
-            pdfDescargado ? "SI" : "NO"
+        TIPO_DOCUMENTO: tipo_doc.value === "Otro" ? tipo_doc_otro.value.trim() : tipo_doc.value,
+        NUMERO_DOCUMENTO: num_doc.value.trim(),
+        BASE_CLIENTE: base.value,
+        TIPO_GESTION: gestion.value,
+        RESULTADO: resultado.value,
+        DESCARGO_PDF: pdfDescargado ? "SI" : "NO"
     };
 
-
     console.log("Enviando gestión:", payload);
-
 
     try {
 
         await fetch(API, {
-
             method: "POST",
-
             mode: "no-cors",
-
             body: new URLSearchParams(payload)
-
         });
 
-
         console.log("Solicitud enviada correctamente");
-
         mostrarExito();
-
         resetForm();
-
 
     } catch (err) {
 
-        console.error(
-            "Error enviando gestión:",
-            err
-        );
-
-        alert(
-            "Error al guardar. Intente nuevamente."
-        );
+        console.error("Error enviando gestión:", err);
+        alert("Error al guardar. Intente nuevamente.");
 
     } finally {
 
         btn.disabled = false;
-
-        btn.innerText =
-            "Guardar Gestión";
-
+        btn.innerText = "Guardar Gestión";
     }
 };
 </script>
