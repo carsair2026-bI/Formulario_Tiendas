@@ -8,7 +8,6 @@
 <link rel="shortcut icon" href="./icono.png">
 <link rel="icon" type="image/png" href="./icono.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
@@ -309,8 +308,7 @@ const MAESTRO_URL  = API + "?action=maestro";
 const CLIENTES_URL = API + "?action=clientes";
 
 let datos = [];
-let clientes = [];
-let clientesCargados = false;
+let clientesActuales = [];
 let pdfDescargado = false;
 
 function clean(v) {
@@ -339,53 +337,20 @@ function resetForm() {
     pdfDescargado = false;
 }
 
-/* ===== Lectura de Excel (llega en base64 desde Apps Script) ===== */
-function normHoja(n) {
-    return (n || "").toString().toUpperCase().replace(/\s+/g, "");
-}
-
-// Busca la tabla (hoja preferida primero) cuya fila de encabezados contenga todas las columnas clave
-function extraerTabla(wb, hojasPreferidas, claves) {
-    const pref = hojasPreferidas.map(normHoja);
-    const orden = [...wb.SheetNames].sort(
-        (a, b) => (pref.includes(normHoja(b)) ? 1 : 0) - (pref.includes(normHoja(a)) ? 1 : 0)
-    );
-
-    for (const nombre of orden) {
-        const m = XLSX.utils.sheet_to_json(wb.Sheets[nombre], { header: 1, defval: "", raw: false });
-        const idx = m.findIndex(r => {
-            const hs = r.map(h => clean(h).toUpperCase());
-            return claves.every(k => hs.includes(k));
-        });
-        if (idx < 0) continue;
-
-        const headers = m[idx].map(h => clean(h).toUpperCase());
-        console.log("Hoja usada:", nombre, "| fila encabezado:", idx + 1, "| columnas:", headers);
-
-        return m.slice(idx + 1)
-            .filter(r => r.some(c => clean(c) !== ""))
-            .map(r => {
-                const o = {};
-                headers.forEach((h, i) => { if (h) o[h] = clean(r[i]); });
-                return o;
-            });
-    }
-    throw new Error("No se encontraron las columnas " + claves.join(", ") +
-        ". Hojas del archivo: " + wb.SheetNames.join(", "));
-}
-
-async function traerExcel(url, hojasPreferidas, claves) {
+/* ===== Datos desde Apps Script (JSON) ===== */
+async function pedirJSON(url) {
     const resp = await fetch(url, { method: "GET", cache: "no-store", redirect: "follow" });
     const text = (await resp.text()).trim();
 
     if (!text) throw new Error("La respuesta está vacía");
-    if (text.startsWith("ERROR:")) throw new Error(text.substring(6).trim());
     if (text.startsWith("<")) {
-        throw new Error("Apps Script devolvió HTML. Revise que la implementación sea 'Cualquier usuario' y esté autorizada");
+        throw new Error("Apps Script devolvió HTML. Revise la implementación (acceso 'Cualquier persona') y vuelva a autorizar");
     }
 
-    const wb = XLSX.read(text, { type: "base64" });
-    return extraerTabla(wb, hojasPreferidas, claves);
+    let j;
+    try { j = JSON.parse(text); } catch (e) { throw new Error("Respuesta no válida del servidor"); }
+    if (!j.ok) throw new Error(j.error || "Error desconocido");
+    return j.rows;
 }
 
 function procesarDatos(filas) {
@@ -417,7 +382,7 @@ function mostrarErrorCarga(mensaje = "Error al cargar datos. Recargue la página
 
 async function cargarMaestro() {
     try {
-        const filas = await traerExcel(MAESTRO_URL, ["BASE"], ["REG", "TIENDA", "VENDEDOR", "ID_VEN"]);
+        const filas = await pedirJSON(MAESTRO_URL);
         console.log("Maestro cargado:", filas.length, "filas");
         procesarDatos(filas);
     } catch (err) {
@@ -426,31 +391,7 @@ async function cargarMaestro() {
     }
 }
 
-async function cargarClientes() {
-    let errorClientes = "";
-    mostrarLoaderClientes();
-    try {
-        clientes = await traerExcel(CLIENTES_URL, ["Hoja 1", "Hoja1"], ["DOC_VENDEDOR"]);
-        console.log("Clientes cargados:", clientes.length, "filas");
-    } catch (err) {
-        console.error("Error cargando clientes:", err.message);
-        clientes = [];
-        errorClientes = err.message;
-    } finally {
-        clientesCargados = true;
-        if (errorClientes) {
-            const lc = document.getElementById("loaderClientes");
-            lc.style.display = "flex";
-            lc.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="animation:none"></i><span>Base de clientes: ' + errorClientes + '</span>';
-        } else {
-            ocultarLoaderClientes();
-        }
-        if (vendedor.value) actualizarBotonDescarga();
-    }
-}
-
 cargarMaestro();
-cargarClientes();
 
 function cargarTiendas() {
     const reg = clean(region.value);
@@ -467,7 +408,9 @@ function cargarTiendas() {
 }
 
 function mostrarLoaderClientes() {
-    document.getElementById("loaderClientes").style.display = "flex";
+    const lc = document.getElementById("loaderClientes");
+    lc.innerHTML = '<i class="bi bi-arrow-repeat"></i><span>Cargando base de clientes...</span>';
+    lc.style.display = "flex";
 }
 
 function ocultarLoaderClientes() {
@@ -493,43 +436,44 @@ function cargarVendedores() {
 region.onchange = cargarTiendas;
 tienda.onchange = cargarVendedores;
 
-function clientesDelVendedor(idVen) {
-    const idVenLimpio = clean(idVen);
-    return clientes.filter(c => clean(c.DOC_VENDEDOR) === idVenLimpio);
-}
-
 function ocultarBotonDescarga() {
     document.getElementById("btnDescargarLista").classList.remove("visible");
+    ocultarLoaderClientes();
+    clientesActuales = [];
 }
 
-function actualizarBotonDescarga() {
+// Al elegir vendedor, el servidor filtra la base de asignación (120k+ registros) y devuelve solo sus clientes
+async function actualizarBotonDescarga() {
     const btnDesc = document.getElementById("btnDescargarLista");
     const texto = document.getElementById("btnDescargarListaTexto");
+    const idVen = vendedor.value;
 
     pdfDescargado = false;
+    ocultarBotonDescarga();
 
-    if (!clientesCargados) {
-        mostrarLoaderClientes();
-        ocultarBotonDescarga();
-        return;
+    if (!idVen) return;
+
+    mostrarLoaderClientes();
+
+    try {
+        const filas = await pedirJSON(CLIENTES_URL + "&vendedor=" + encodeURIComponent(idVen));
+        if (vendedor.value !== idVen) return;   // cambió de vendedor mientras cargaba
+
+        clientesActuales = filas;
+        ocultarLoaderClientes();
+
+        if (filas.length === 0) return;
+
+        texto.textContent = `Descargar Lista de Clientes (${filas.length})`;
+        btnDesc.classList.add("visible");
+
+    } catch (err) {
+        console.error("Error cargando clientes:", err);
+        if (vendedor.value !== idVen) return;
+        const lc = document.getElementById("loaderClientes");
+        lc.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="animation:none"></i><span>Base de clientes: ' + err.message + '</span>';
+        lc.style.display = "flex";
     }
-
-    if (!document.getElementById("loaderClientes").textContent.includes("Base de clientes:")) ocultarLoaderClientes();
-
-    if (!vendedor.value) {
-        ocultarBotonDescarga();
-        return;
-    }
-
-    const misClientes = clientesDelVendedor(vendedor.value);
-
-    if (misClientes.length === 0) {
-        ocultarBotonDescarga();
-        return;
-    }
-
-    texto.textContent = `Descargar Lista de Clientes (${misClientes.length})`;
-    btnDesc.classList.add("visible");
 }
 vendedor.addEventListener("change", actualizarBotonDescarga);
 
@@ -538,7 +482,7 @@ document.getElementById("btnDescargarLista").onclick = () => {
     if (!idVen) return;
 
     const nombreVendedor = vendedor.options[vendedor.selectedIndex].text;
-    const misClientes = clientesDelVendedor(idVen);
+    const misClientes = clientesActuales;
 
     if (misClientes.length === 0) {
         alert("No se encontraron clientes para este vendedor.");
