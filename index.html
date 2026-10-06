@@ -340,7 +340,41 @@ function resetForm() {
 }
 
 /* ===== Lectura de Excel (llega en base64 desde Apps Script) ===== */
-async function traerExcel(url, hojaPreferida) {
+function normHoja(n) {
+    return (n || "").toString().toUpperCase().replace(/\s+/g, "");
+}
+
+// Busca la tabla (hoja preferida primero) cuya fila de encabezados contenga todas las columnas clave
+function extraerTabla(wb, hojasPreferidas, claves) {
+    const pref = hojasPreferidas.map(normHoja);
+    const orden = [...wb.SheetNames].sort(
+        (a, b) => (pref.includes(normHoja(b)) ? 1 : 0) - (pref.includes(normHoja(a)) ? 1 : 0)
+    );
+
+    for (const nombre of orden) {
+        const m = XLSX.utils.sheet_to_json(wb.Sheets[nombre], { header: 1, defval: "", raw: false });
+        const idx = m.findIndex(r => {
+            const hs = r.map(h => clean(h).toUpperCase());
+            return claves.every(k => hs.includes(k));
+        });
+        if (idx < 0) continue;
+
+        const headers = m[idx].map(h => clean(h).toUpperCase());
+        console.log("Hoja usada:", nombre, "| fila encabezado:", idx + 1, "| columnas:", headers);
+
+        return m.slice(idx + 1)
+            .filter(r => r.some(c => clean(c) !== ""))
+            .map(r => {
+                const o = {};
+                headers.forEach((h, i) => { if (h) o[h] = clean(r[i]); });
+                return o;
+            });
+    }
+    throw new Error("No se encontraron las columnas " + claves.join(", ") +
+        ". Hojas del archivo: " + wb.SheetNames.join(", "));
+}
+
+async function traerExcel(url, hojasPreferidas, claves) {
     const resp = await fetch(url, { method: "GET", cache: "no-store", redirect: "follow" });
     const text = (await resp.text()).trim();
 
@@ -351,18 +385,7 @@ async function traerExcel(url, hojaPreferida) {
     }
 
     const wb = XLSX.read(text, { type: "base64" });
-    const nombreHoja = (hojaPreferida && wb.SheetNames.includes(hojaPreferida))
-        ? hojaPreferida
-        : wb.SheetNames[0];
-
-    const filas = XLSX.utils.sheet_to_json(wb.Sheets[nombreHoja], { defval: "", raw: false });
-
-    // Limpia espacios en los nombres de columna
-    return filas.map(f => {
-        const o = {};
-        Object.keys(f).forEach(k => { o[k.trim()] = f[k]; });
-        return o;
-    });
+    return extraerTabla(wb, hojasPreferidas, claves);
 }
 
 function procesarDatos(filas) {
@@ -394,7 +417,7 @@ function mostrarErrorCarga(mensaje = "Error al cargar datos. Recargue la página
 
 async function cargarMaestro() {
     try {
-        const filas = await traerExcel(MAESTRO_URL, "BASE");
+        const filas = await traerExcel(MAESTRO_URL, ["BASE"], ["REG", "TIENDA", "VENDEDOR", "ID_VEN"]);
         console.log("Maestro cargado:", filas.length, "filas");
         procesarDatos(filas);
     } catch (err) {
@@ -404,16 +427,24 @@ async function cargarMaestro() {
 }
 
 async function cargarClientes() {
+    let errorClientes = "";
     mostrarLoaderClientes();
     try {
-        clientes = await traerExcel(CLIENTES_URL);
+        clientes = await traerExcel(CLIENTES_URL, ["Hoja 1", "Hoja1"], ["DOC_VENDEDOR"]);
         console.log("Clientes cargados:", clientes.length, "filas");
     } catch (err) {
         console.error("Error cargando clientes:", err.message);
         clientes = [];
+        errorClientes = err.message;
     } finally {
         clientesCargados = true;
-        ocultarLoaderClientes();
+        if (errorClientes) {
+            const lc = document.getElementById("loaderClientes");
+            lc.style.display = "flex";
+            lc.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="animation:none"></i><span>Base de clientes: ' + errorClientes + '</span>';
+        } else {
+            ocultarLoaderClientes();
+        }
         if (vendedor.value) actualizarBotonDescarga();
     }
 }
@@ -483,7 +514,7 @@ function actualizarBotonDescarga() {
         return;
     }
 
-    ocultarLoaderClientes();
+    if (!document.getElementById("loaderClientes").textContent.includes("Base de clientes:")) ocultarLoaderClientes();
 
     if (!vendedor.value) {
         ocultarBotonDescarga();
