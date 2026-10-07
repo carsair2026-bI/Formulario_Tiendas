@@ -313,12 +313,28 @@ function mostrarErrorCarga(mensaje = "Error al cargar datos. Recargue la página
 
 async function cargarMaestro() {
     try {
+
         const filas = await pedirJSONConReintento(MAESTRO_URL);
-        console.log("Maestro cargado:", filas.length, "filas");
+
+        console.log(
+            "Maestro cargado:",
+            Array.isArray(filas) ? filas.length : 0,
+            "filas"
+        );
+
+        if (!Array.isArray(filas)) {
+            throw new Error("El servidor no devolvió una colección de filas");
+        }
+
         procesarDatos(filas);
+
     } catch (err) {
+
         console.error("Error cargando maestro:", err);
-        mostrarErrorCarga("Error al cargar datos: " + err.message);
+
+        mostrarErrorCarga(
+            "Error al cargar datos: " + err.message
+        );
     }
 }
 
