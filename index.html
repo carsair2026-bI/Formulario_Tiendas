@@ -441,8 +441,7 @@ function ocultarBotonDescarga() {
     ocultarLoaderClientes();
     clientesActuales = [];
 }
-
-// Al elegir vendedor, el servidor filtra la base de asignación (120k+ registros) y devuelve solo sus clientes
+function limpiarNan(v) { const s = clean(v); return s.toLowerCase() === "nan" ? "" : s; }
 async function actualizarBotonDescarga() {
     const btnDesc = document.getElementById("btnDescargarLista");
     const texto = document.getElementById("btnDescargarListaTexto");
